@@ -1,0 +1,6 @@
+[2024-09-18 03:10:17,352] Running step: step_qonnx_to_finn [1/19]
+[2024-09-18 03:10:17,363] Running step: step_tidy_up [2/19]
+[2024-09-18 03:10:17,620] Running verification for initial_python
+[2024-09-18 03:18:15,830] Running step: step_qonnx_to_finn [1/19]
+[2024-09-18 03:18:15,848] Running step: step_tidy_up [2/19]
+[2024-09-18 03:18:16,093] Running step: step_streamline [3/19]

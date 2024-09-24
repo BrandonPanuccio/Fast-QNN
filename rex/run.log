@@ -1,0 +1,41 @@
+-------last night with weights
+2023-04-24 10:11:05.408660 : Network 1w1a : Accuracy 79.2.
+2023-04-24 12:29:19.977609 : Network 2w2a : Accuracy 82.04.
+2023-04-24 14:47:49.162985 : Network 3w3a : Accuracy 81.94.
+2023-04-24 17:06:06.827172 : Network 8w8a : Accuracy 80.28.
+--------epochs 1
+2023-04-24 20:36:23.117446 : Network 1w1a : Accuracy 43.92.
+2023-04-24 20:36:57.070088 : Network 1w1a : Accuracy 44.47.
+2023-04-24 20:37:24.973489 : Network 2w2a : Accuracy 52.19.
+2023-04-24 20:37:52.603088 : Network 3w3a : Accuracy 53.15.
+2023-04-24 20:38:20.310256 : Network 8w8a : Accuracy 56.01.
+2023-04-24 20:39:21.449943 : Network 1w1a_larger : Accuracy 52.06.
+2023-04-24 20:40:20.847176 : Network 8w8a_larger : Accuracy 51.76.
+--------epochs 10
+2023-04-24 20:45:09.655933 : Network 1w1a : Accuracy 62.96.
+2023-04-24 20:49:07.938907 : Network 2w2a : Accuracy 68.35.
+--------small network change epochs 10
+2023-04-24 20:53:00.840868 : Network 1w1a : Accuracy 63.28.
+2023-04-24 20:56:10.591130 : Network 2w2a : Accuracy 71.23.
+-------another change epochs 10
+2023-04-24 21:02:31.390355 : Network 1w1a : Accuracy 67.63.
+2023-04-24 21:07:29.602218 : Network 2w2a : Accuracy 73.0.
+2023-04-24 21:11:13.378473 : Network 3w3a : Accuracy 74.81.
+2023-04-24 21:14:57.732900 : Network 8w8a : Accuracy 75.14.
+2023-04-24 21:25:28.080055 : Network 1w1a_larger : Accuracy 73.3.
+2023-04-24 21:36:16.021763 : Network 8w8a_larger : Accuracy 73.56.
+------change to larger network epoch 10
+2023-04-24 21:46:00.263773 : Network 1w1a_larger : Accuracy 73.35.
+2023-04-24 21:55:18.775385 : Network 8w8a_larger : Accuracy 74.56.
+2023-04-24 22:00:43.907520 : Network 1w1a_larger : Accuracy 73.35.
+2023-04-24 22:11:28.675356 : Network 3w3a : Accuracy 77.96.
+------START. epochs=200, weight=0, lr=2e-3
+2023-04-24 23:34:27.847382 : Network 1w1a : Accuracy 78.94.
+-GOOD-2023-04-25 01:10:50.937317 : Network 2w2a : Accuracy 82.17.
+-GOOD-2023-04-25 02:42:41.308101 : Network 3w3a : Accuracy 82.84.
+2023-04-25 05:42:01.495935 : Network 1w1a_larger : Accuracy 80.86.
+2023-04-25 12:57:07.742530 : Network 8w8a_larger : Accuracy 82.93.
+-GOOD-2023-04-25 19:42:41.112727 : Network 8w8a : Accuracy 83.16.
+-GOOD-2023-04-25 21:55:16.877887 : Network 1w1a : Accuracy 79.95.
+-GOOD-2023-04-26 00:18:47.901416 : Network 1w1a_larger : Accuracy 81.1.
+-GOOD-2023-04-26 09:01:01.431215 : Network 8w8a_larger : Accuracy 83.68.
