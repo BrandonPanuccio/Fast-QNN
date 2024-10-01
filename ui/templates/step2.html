@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="alert alert-info">
+    <h2>Processing dataset...</h2>
+    <form action="{{ url_for('step3') }}" method="POST">
+        <button type="submit" class="btn btn-primary">Next</button>
+    </form>
+    <a href="{{ url_for('step1') }}" class="btn btn-secondary">Previous</a>
+</div>
+{% endblock %}
