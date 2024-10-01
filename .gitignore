@@ -1,2 +1,4 @@
 /AlexNet/data/
 /data/
+.venv/
+.idea/
