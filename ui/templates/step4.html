@@ -1,10 +1,10 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="alert alert-success">
+<div class="alert alert-info">
     <h2>Done!</h2>
-    <p>The processing is complete. Thank you for using the system.</p>
+    <p>The processing is complete. Move onto automating transforms.</p>
     <a href="{{ url_for('step1') }}" class="btn btn-primary">Start Again</a>
-    <a href="{{ url_for('step3') }}" class="btn btn-secondary">Previous</a>
+    <a href="{{ url_for('step5') }}" class="btn btn-secondary">Next</a>
 </div>
 {% endblock %}

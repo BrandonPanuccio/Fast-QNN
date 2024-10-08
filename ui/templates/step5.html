@@ -1,0 +1,96 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class = "alert alert-info">
+    <h2>Automating Transforms</h2>
+
+    <!-- Loading screen message -->
+    <div id="loading1">Brevitas Transform Loading...</div>
+
+    <!-- Completion message -->
+    <div id="complete1" style="display: none;">Complete!</div>
+
+    <!-- Loading screen -->
+    <div id="loading2"> Finn Qonnx Transform Loading...</div>
+
+    <!-- Completion message -->
+    <div id="complete2" style="display: none;">Complete!</div>
+
+    <div id="loading3"> Tidying Up Optimization Transform Loading...</div>
+
+    <div id="complete3" style="display: none;">Complete!</div>
+
+    <div id="loading4"> Streamlining Transform Loading...</div>
+
+    <div id="complete4" style="display: none;">Complete!</div>
+
+    <div id="loading5"> Converting to Hardware Transform Loading...</div>
+
+    <div id="complete5" style="display: none;">Complete!</div>
+
+    <div id="loading6"> Data Flow Partitioning Transform Loading...</div>
+
+    <div id="complete6" style="display: none;">Complete!</div>
+
+    <div id="loading7"> Folding Transform Loading...</div>
+
+    <div id="complete7" style="display: none;">Complete!</div>
+
+    <script>
+        // Delay
+        window.onload = function() {
+            // Set a delay (1 second = 1000 ms) before showing "Complete"
+            setTimeout(function() {
+                // Hide the loading screen and show the completion message
+                document.getElementById('loading1').style.display = 'none';
+                document.getElementById('complete1').style.display = 'block';
+            }, 1000); // 1000ms = 1 second
+
+            setTimeout(function() {
+                // Hide the loading screen and show the completion message
+                document.getElementById('loading2').style.display = 'none';
+                document.getElementById('complete2').style.display = 'block';
+            }, 2000); // 2000ms = 2 second
+
+            setTimeout(function() {
+                // Hide the loading screen and show the completion message
+                document.getElementById('loading3').style.display = 'none';
+                document.getElementById('complete3').style.display = 'block';
+            }, 3000);
+
+            setTimeout(function() {
+                // Hide the loading screen and show the completion message
+                document.getElementById('loading4').style.display = 'none';
+                document.getElementById('complete4').style.display = 'block';
+            }, 4000);
+
+            setTimeout(function() {
+                // Hide the loading screen and show the completion message
+                document.getElementById('loading5').style.display = 'none';
+                document.getElementById('complete5').style.display = 'block';
+            }, 5000);
+
+            setTimeout(function() {
+                // Hide the loading screen and show the completion message
+                document.getElementById('loading6').style.display = 'none';
+                document.getElementById('complete6').style.display = 'block';
+            }, 6000);
+
+            setTimeout(function() {
+                // Hide the loading screen and show the completion message
+                document.getElementById('loading7').style.display = 'none';
+                document.getElementById('complete7').style.display = 'block';
+            }, 7000);
+        };
+    </script>
+
+     <form action="{{ url_for('step6') }}" method="POST">
+        <button type="submit" class="btn btn-primary">Next</button>
+    </form>
+    <a href="{{ url_for('step4') }}" class="btn btn-secondary">Previous</a>
+
+</div>
+
+
+
+{% endblock %}

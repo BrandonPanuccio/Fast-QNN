@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class = "alert alert-info">
+    <h2>Deployment</h2>
+    <!-- deploy onto board or new sd -->
+    <!-- Loading screen message -->
+    <div id="loading">Deploying onto FPGA Board...</div>
+
+    <!-- Completion message -->
+    <div id="complete" style="display: none;">Complete!</div>
+</div>
+
+<script>
+   window.onload = function() {
+     // Set a delay (1 second = 1000 ms) before showing "Complete"
+     setTimeout(function () {
+       // Hide the loading screen and show the completion message
+       document.getElementById('loading').style.display = 'none';
+       document.getElementById('complete').style.display = 'block';
+     }, 1000); // 1000ms = 1 second
+   }
+</script>
+
+<form action="{{ url_for('step8') }}" method="POST">
+        <button type="submit" class="btn btn-primary">Next</button>
+    </form>
+    <a href="{{ url_for('step6') }}" class="btn btn-secondary">Previous</a>
+{% endblock %}

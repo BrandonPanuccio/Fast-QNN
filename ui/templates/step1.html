@@ -92,11 +92,10 @@
 
         if (modelType === 'pretrained') {
             document.getElementById('pretrainedOptions').style.display = 'block';
-            if ((verifyAccuracy && verifyAccuracy.value === 'yes')){
+            if ((verifyAccuracy && verifyAccuracy.value === 'yes')) {
                 document.getElementById('datasetOptions').style.display = 'block';
                 document.getElementById('datasetNote').style.display = 'block';
-            }
-            else{
+            } else {
                 document.getElementById('datasetOptions').style.display = 'none';
                 document.getElementById('datasetNote').style.display = 'none';
             }
