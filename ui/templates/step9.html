@@ -2,7 +2,13 @@
 
 {% block content %}
 <div class="card p-4 shadow">
-    <h1>About Our Project</h1>
-    <p>This project is designed to provide a comprehensive system for managing multi-step forms and data input for machine learning models.</p>
+    <h1>Project Complete!</h1>
+    <p>Thank you for using our application!</p>
 </div>
+
+<form action="{{ url_for('step1') }}" method="POST">
+        <button type="submit" class="btn btn-primary">Exit</button>
+</form>
+
+
 {% endblock %}

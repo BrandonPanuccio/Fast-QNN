@@ -36,12 +36,12 @@ def step1():
     if request.method == 'POST':
         target_board = request.form.get('target_board')
         model_type = request.form.get('model_type')
-        verify_accuracy = request.form.get('verify_accuracy')
+
 
         # Store the form data in session
         session['target_board'] = target_board
         session['model_type'] = model_type
-        session['verify_accuracy'] = verify_accuracy
+
 
         # Handle unsupported boards
         if target_board == "other":
@@ -58,32 +58,23 @@ def step1():
 
         session['dataset'] = request.form.get('dataset')
 
-        if session['model_type'] == 'pretrained' and session['verify_accuracy'] == 'yes' and session[
-            'dataset'] == 'other':
-            return render_template('unsupported_dataset.html')
-
-        return redirect(url_for('step2'))
 
     return render_template('step1.html')
 
 
-@app.route('/step2', methods=['GET', 'POST'])
+@app.route('/step2', methods=['POST', 'GET'])
 def step2():
-    if request.method == 'POST':
-        return redirect(url_for('step3'))
     return render_template('step2.html')
 
-
-@app.route('/step3', methods=['POST'])
+@app.route('/step3', methods=['POST', 'GET'])
 def step3():
     return render_template('step3.html')
-
 
 @app.route('/step4', methods=['POST'])
 def step4():
     return render_template('step4.html')
 
-@app.route('/step5', methods=['POST', 'GET'])
+@app.route('/step5', methods=['POST'])
 def step5():
     return render_template('step5.html')
 
@@ -102,6 +93,8 @@ def step8():
 @app.route('/step9', methods=['POST', 'GET'])
 def step9():
     return render_template('step9.html')
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

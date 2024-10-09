@@ -76,12 +76,12 @@ def step2():
 
 @app.route('/step3', methods=['POST'])
 def step3():
-    return render_template('step3.html')
+    return render_template('step4.html')
 
 
 @app.route('/step4', methods=['POST'])
 def step4():
-    return render_template('step4.html')
+    return render_template('step5.html')
 
 
 if __name__ == '__main__':

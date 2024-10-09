@@ -2,10 +2,35 @@
 
 {% block content %}
 <div class="alert alert-info">
-    <h2>Processing dataset...</h2>
-    <form action="{{ url_for('step3') }}" method="POST">
+    <h2>Model Training</h2>
+
+    <!-- Upload model.py -->
+        <div id="modelUploadOptions" class="form-group" style="display: block;">
+            <label for="model_file">Upload your model.py:</label>
+            <input type="file" name="model_file" accept=".py" class="form-control">
+        </div>
+
+    <!-- Input 5: Choose Dataset -->
+        <div id="datasetOptions" class="form-group" style="display: block;">
+            <label for="dataset">Choose a dataset:</label>
+            <select name="dataset" class="form-control">
+                <option value="cifar10">Cifar 10</option>
+                <option value="mnist">MNIST</option>
+                <option value="other">Other</option>
+            </select>
+            <small id="datasetNote" class="form-text text-muted" style="display: none;">Choose the dataset the model was initially trained on.</small>
+        </div>
+
+        <!-- Input 4: Upload model.py -->
+        <div id="SureSelection" class="form-group" style="display: none;">
+            <label for="model_file">Upload your model.py:</label>
+
+        </div>
+
+    <form action="{{ url_for('step4') }}" method="POST">
         <button type="submit" class="btn btn-primary">Next</button>
     </form>
     <a href="{{ url_for('step1') }}" class="btn btn-secondary">Previous</a>
 </div>
+
 {% endblock %}

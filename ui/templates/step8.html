@@ -1,31 +1,10 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class = "alert alert-info">
-    <h2>Testing</h2>
-
-    <!-- Input 3: Verify Accuracy -->
-        <div id="verifyOptions" class="form-group" style="display: none;">
-            <label for="verify_accuracy">Do you want to verify your pre and post accuracy?</label><br>
-            <input type="radio" name="verify_accuracy" value="yes" onclick="showModelOptions()"> Yes<br>
-            <input type="radio" name="verify_accuracy" value="no" onclick="showModelOptions()"> No
-        </div>
-
-</div>
-
-<script>
-   window.onload = function() {
-     // Set a delay (1 second = 1000 ms) before showing "Complete"
-     setTimeout(function () {
-       // Hide the loading screen and show the completion message
-       document.getElementById('loading').style.display = 'none';
-       document.getElementById('complete').style.display = 'block';
-     }, 1000); // 1000ms = 1 second
-   }
-</script>
-
-<form action="{{ url_for('step9') }}" method="POST">
+<div class="alert alert-info">
+    <h2>Camera Interface</h2>
+    <p>Please connect camera onto board</p>
+    <form action="{{ url_for('step9') }}" method="POST">
         <button type="submit" class="btn btn-primary">Next</button>
-    </form>
-    <a href="{{ url_for('step6') }}" class="btn btn-secondary">Previous</a>
+</div>
 {% endblock %}

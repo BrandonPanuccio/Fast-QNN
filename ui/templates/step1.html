@@ -1,8 +1,7 @@
 {% extends "layout.html" %}
-
 {% block content %}
 <div class="card p-4 shadow">
-    <h1>Step 1: Model Configuration</h1>
+    <h1>Board and Model Configuration</h1>
     <form action="{{ url_for('step1') }}" method="POST" enctype="multipart/form-data">
         <!-- Input 1: Target Board Dropdown -->
         <div class="form-group">
@@ -17,38 +16,8 @@
         <!-- Input 2: Pre-trained or Untrained Model -->
         <div id="modelOptions" class="form-group" style="display: none;">
             <label for="model_type">Are you inputting a pre-trained model or untrained model?</label><br>
-            <input type="radio" name="model_type" value="pretrained" onclick="resetModelOptions(); showModelOptions()"> Pre-trained Model<br>
-            <input type="radio" name="model_type" value="untrained" onclick="resetModelOptions(); showModelOptions()"> Untrained Model
-        </div>
-
-        <!-- Input 3: Verify Accuracy -->
-        <div id="verifyOptions" class="form-group" style="display: none;">
-            <label for="verify_accuracy">Do you want to verify your pre and post accuracy?</label><br>
-            <input type="radio" name="verify_accuracy" value="yes" onclick="showModelOptions()"> Yes<br>
-            <input type="radio" name="verify_accuracy" value="no" onclick="showModelOptions()"> No
-        </div>
-
-        <!-- Input 4: Upload pth file for pre-trained model -->
-        <div id="pretrainedOptions" class="form-group" style="display: none;">
-            <label for="pth_file">Upload your pth file (only accepts pth files):</label>
-            <input type="file" name="pth_file" accept=".pth" class="form-control">
-        </div>
-
-        <!-- Input 5: Upload model.py -->
-        <div id="modelUploadOptions" class="form-group" style="display: none;">
-            <label for="model_file">Upload your model.py:</label>
-            <input type="file" name="model_file" accept=".py" class="form-control">
-        </div>
-
-        <!-- Input 6: Choose Dataset -->
-        <div id="datasetOptions" class="form-group" style="display: none;">
-            <label for="dataset">Choose a dataset:</label>
-            <select name="dataset" class="form-control">
-                <option value="cifar10">Cifar 10</option>
-                <option value="mnist">MNIST</option>
-                <option value="other">Other</option>
-            </select>
-            <small id="datasetNote" class="form-text text-muted" style="display: none;">Choose the dataset the model was initially trained on.</small>
+            <input type="radio" name="model_type" value="pretrained" onclick="showModelOptions()"> Pre-trained Model<br>
+            <input type="radio" name="model_type" value="untrained" onclick="showModelOptions()"> Untrained Model
         </div>
 
         <button type="submit" class="btn btn-primary">Next</button>
@@ -59,11 +28,6 @@
     // Reset all options to be hidden
     function resetOptions() {
         document.getElementById('modelOptions').style.display = 'none';
-        document.getElementById('pretrainedOptions').style.display = 'none';
-        document.getElementById('modelUploadOptions').style.display = 'none';
-        document.getElementById('datasetOptions').style.display = 'none';
-        document.getElementById('datasetNote').style.display = 'none';
-        document.getElementById('verifyOptions').style.display = 'none';
     }
 
     // Show options based on selected target board
@@ -73,38 +37,19 @@
             alert('We do not support other boards at the moment.');
         } else {
             document.getElementById('modelOptions').style.display = 'block';
-            document.getElementById('verifyOptions').style.display = 'block';
         }
     }
 
-    // Reset model-related options when model type is changed
-    function resetModelOptions() {
-        document.getElementById('pretrainedOptions').style.display = 'none';
-        document.getElementById('modelUploadOptions').style.display = 'none';
-        document.getElementById('datasetOptions').style.display = 'none';
-        document.getElementById('datasetNote').style.display = 'none';
-    }
-
-    // Show model options and dataset options based on pre-trained/untrained model and verification
+    // Show model options and redirect based on pre-trained/untrained model
     function showModelOptions() {
-        var modelType = document.querySelector('input[name="model_type"]:checked').value;
-        var verifyAccuracy = document.querySelector('input[name="verify_accuracy"]:checked');
+        var modelType = document.querySelector('input[name="model_type"]:checked').value; // Get selected radio button value
 
         if (modelType === 'pretrained') {
-            document.getElementById('pretrainedOptions').style.display = 'block';
-            if ((verifyAccuracy && verifyAccuracy.value === 'yes')) {
-                document.getElementById('datasetOptions').style.display = 'block';
-                document.getElementById('datasetNote').style.display = 'block';
-            } else {
-                document.getElementById('datasetOptions').style.display = 'none';
-                document.getElementById('datasetNote').style.display = 'none';
-            }
-        }
-
-        if (modelType === 'untrained') {
-            document.getElementById('modelUploadOptions').style.display = 'block';
-            document.getElementById('datasetOptions').style.display = 'block';
+            window.location.href = "{{ url_for('step3') }}";  // Redirect to step 3 for pre-trained model
+        } else if (modelType === 'untrained') {
+            window.location.href = "{{ url_for('step2') }}";  // Redirect to step 2 for untrained model
         }
     }
 </script>
 {% endblock %}
+

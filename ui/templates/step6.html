@@ -2,28 +2,59 @@
 
 {% block content %}
 <div class="alert alert-info">
-    <h2>Install Drivers</h2>
-    <!-- Loading screen message -->
-    <div id="loading">Installing all drivers...</div>
+    <h2>Deployment</h2>
+    <!-- deploy onto board or new sd -->
+    <div id="deployment_options" class="form-group">
+        <label for="deployment_options">Would you like to deploy onto the board or a new SD?</label><br>
+        <input type="radio" name="deployment_choice" value="Board" onclick="showDeploymentOptions('Board')"> Board<br>
+        <input type="radio" name="deployment_choice" value="SD" onclick="showDeploymentOptions('SD')"> SD
+    </div>
 
-    <!-- Completion message -->
-    <div id="complete" style="display: none;">Complete!</div>
+    <!-- Loading screen message for board -->
+    <div id="board_loading" class="alert alert-info" style="display: none;">
+        <div id="loading1">Deploying onto FPGA Board...</div>
+
+        <!-- Completion message for board -->
+        <div id="complete1" style="display: none;">Complete!</div>
+    </div>
+
+    <!-- Loading screen message for SD -->
+    <div id="sd_loading" class="alert alert-info" style="display: none;">
+        <div id="loading2">Deploying onto SD...</div>
+
+        <!-- Completion message for SD -->
+        <div id="complete2" style="display: none;">Complete!</div>
+    </div>
+
+    <form action="{{ url_for('step7') }}" method="POST">
+        <button type="submit" class="btn btn-primary">Next</button>
+    </form>
+    <a href="{{ url_for('step6') }}" class="btn btn-secondary">Previous</a>
 </div>
 
 <script>
-     // Delay
-        window.onload = function() {
-            // Set a delay (1 second = 1000 ms) before showing "Complete"
-            setTimeout(function () {
-                // Hide the loading screen and show the completion message
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('complete').style.display = 'block';
-            }, 2000); // 2000ms = 2 second
+    // Function to deployment progress based on selection
+    function showDeploymentOptions(choice) {
+        // Hide both loading screens initially
+        document.getElementById('board_loading').style.display = 'none';
+        document.getElementById('sd_loading').style.display = 'none';
+
+        if (choice === "Board") {
+            // Show board loading and handle timing for completion message
+            document.getElementById('board_loading').style.display = 'block';
+            setTimeout(function() {
+                document.getElementById('loading1').style.display = 'none';
+                document.getElementById('complete1').style.display = 'block';
+            }, 1000); // 1 second delay for loading
+        } else if (choice === "SD") {
+            // Show SD loading and handle timing for completion message
+            document.getElementById('sd_loading').style.display = 'block';
+            setTimeout(function() {
+                document.getElementById('loading2').style.display = 'none';
+                document.getElementById('complete2').style.display = 'block';
+            }, 1000); // 1 second delay for loading
         }
+    }
 </script>
 
-<form action="{{ url_for('step7') }}" method="POST">
-        <button type="submit" class="btn btn-primary">Next</button>
-    </form>
-    <a href="{{ url_for('step5') }}" class="btn btn-secondary">Previous</a>
 {% endblock %}
