@@ -3,8 +3,17 @@
 {% block content %}
 <div class="alert alert-info">
     <h2>Camera Interface</h2>
-    <p>Please connect camera onto board</p>
+
+    <div id="CameraOptions" class="form-group" style="display: block;">
+            <label for="Camera">Choose a Camera Input:</label>
+            <select name="dataset" class="form-control">
+                <option value="Phone">Phone Camera</option>
+                <option value="Webcam">Webcam</option>
+            </select>
+    </div>
+
     <form action="{{ url_for('step9') }}" method="POST">
         <button type="submit" class="btn btn-primary">Next</button>
+    </form>
 </div>
 {% endblock %}
