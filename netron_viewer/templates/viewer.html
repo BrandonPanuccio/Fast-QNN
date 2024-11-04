@@ -54,6 +54,7 @@
     <div class="btn-container">
         <button class="btn btn-success me-2" onclick="showAllOpen()">Show All Open</button>
         <button class="btn btn-secondary" onclick="closeAll()">Close All</button>
+        <button class="btn btn-outline-danger" onclick="reset()">Reset and Go to Setup</button>
     </div>
 </div>
 
@@ -165,6 +166,12 @@
         });
         // Clear the tracking dictionary
         Object.keys(netronWindows).forEach(key => delete netronWindows[key]);
+    }
+
+    async function reset(){
+        closeAll();
+        await delay(1500);
+        location.href="{{ url_for('reset') }}";
     }
 </script>
 
