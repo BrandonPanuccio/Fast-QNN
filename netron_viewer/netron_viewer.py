@@ -63,11 +63,12 @@ def index():
     # Retrieve sorted ONNX files and model names
     onnx_folder = session.get('onnx_folder')
     proj_name = session.get('proj_name')
+    netron_start_port = session.get('netron_start_port')
     onnx_files = get_sorted_onnx_files(onnx_folder)
     model_names = [os.path.basename(path).replace(proj_name + '_', '') for path in onnx_files] if onnx_files else []
 
     return render_template('viewer.html', onnx_files=onnx_files, enumerate=enumerate, model_names=model_names,
-                           project_name=proj_name)
+                           project_name=proj_name, netron_start_port=netron_start_port)
 
 
 # Route to view the ONNX model at a specific index and start Netron instance

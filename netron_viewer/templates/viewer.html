@@ -60,9 +60,10 @@
 
 <script>
     const netronWindows = {};  // Track open windows with model indices as keys
+    const basePort = {{ netron_start_port }};  // Retrieve base port from session
 
     function openModel(index, compare = false, width = null, height = null, left = null, top = null) {
-        const port = 20123 + parseInt(index);  // Assign unique port for each model based on index
+        const port = basePort + parseInt(index);  // Assign unique port for each model based on index
         const modelName = "{{ model_names[index] }}";  // Fetch the model name from template context
 
         if (!compare) closeAll();
@@ -150,7 +151,6 @@
         for (let i = 0; i < openWindowIndices.length; i++) {
             const index = openWindowIndices[i];
             const left = i * width;
-            console.log(left)
             const top = 0;
             openModel(index, true, width, height, left, top);  // Reopen with new dimensions and position
             await delay(1500);  // Wait 1.5 s
@@ -174,7 +174,6 @@
         location.href="{{ url_for('reset') }}";
     }
 </script>
-
 
 <!-- Bootstrap JS (Optional for interactive components) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
