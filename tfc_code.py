@@ -9,6 +9,7 @@ import onnx
 from finn.util.test import get_test_model_trained
 from brevitas.export import export_qonnx
 from qonnx.util.cleanup import cleanup as qonnx_cleanup
+from finn.transformation.qonnx.qonnx_activation_handlers import QuantReluHandler
 
 tfc = get_test_model_trained("TFC", 1, 1)
 export_onnx_path = build_dir+"/tfc_w1_a1.onnx"
