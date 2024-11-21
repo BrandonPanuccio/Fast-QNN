@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Configuration UI</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Styling for error highlights */
+        .error {
+            border: 2px solid red;
+        }
+        .error-message {
+            color: red;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Project Configuration UI</h1>
+
+    <!-- Project Setup Section -->
+    <div class="card mb-4">
+        <div class="card-header">Project Setup</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="prj_name">Project Name</label>
+                <input type="text" id="prj_name" class="form-control" placeholder="Enter project name">
+                <div id="prj_name_error" class="error-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="project_folder">Select Project Folder</label>
+                <input type="file" id="project_folder" class="form-control" webkitdirectory>
+                <div id="project_folder_error" class="error-message"></div>
+            </div>
+            <button class="btn btn-primary" onclick="submitProjectSetup()">Save Project Setup</button>
+            <div id="projectSetupResult" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- Model Configuration Section -->
+    <div class="card mb-4">
+        <div class="card-header">Model Configuration</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="model_type">Model Type</label>
+                <select id="model_type" class="form-control" onchange="toggleModelFields()">
+                    <option value="">Select model type</option>
+                    <option value="untrained">Untrained</option>
+                    <option value="custom_pretrained">Custom Pretrained</option>
+                    <option value="torch_vision_pretrained">TorchVision Pretrained</option>
+                </select>
+                <div id="model_type_error" class="error-message"></div>
+            </div>
+            <div class="form-group" id="model_py_file_group" style="display: none;">
+                <label for="model_py_file">Select Model Python File</label>
+                <input type="file" id="model_py_file" class="form-control">
+            </div>
+            <div class="form-group" id="model_pth_file_group" style="display: none;">
+                <label for="model_pth_file">Select Model Weights File (.pth)</label>
+                <input type="file" id="model_pth_file" class="form-control">
+            </div>
+            <div class="form-group" id="torch_vision_model_group" style="display: none;">
+                <label for="torch_vision_model">TorchVision Model Name</label>
+                <input type="text" id="torch_vision_model" class="form-control" placeholder="Enter TorchVision model name">
+            </div>
+            <button class="btn btn-primary" onclick="submitModelConfig()">Save Model Configuration</button>
+            <div id="modelConfigResult" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- Dataset Configuration Section -->
+    <div class="card mb-4">
+        <div class="card-header">Dataset Configuration</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="dataset_type">Dataset Type</label>
+                <select id="dataset_type" class="form-control" onchange="toggleDatasetFields()">
+                    <option value="">Select dataset type</option>
+                    <option value="torch_vision_dataset">TorchVision Dataset</option>
+                    <option value="custom_dataset">Custom Dataset</option>
+                </select>
+                <div id="dataset_type_error" class="error-message"></div>
+            </div>
+            <div class="form-group" id="custom_dataset_group" style="display: none;">
+                <label for="custom_dataset">Select Custom Dataset Archive (zip/tar)</label>
+                <input type="file" id="custom_dataset" class="form-control">
+            </div>
+            <div class="form-group" id="torch_vision_dataset_group" style="display: none;">
+                <label for="torch_vision_dataset">TorchVision Dataset Name</label>
+                <input type="text" id="torch_vision_dataset" class="form-control" placeholder="Enter TorchVision dataset name">
+            </div>
+            <button class="btn btn-primary" onclick="submitDatasetConfig()">Save Dataset Configuration</button>
+            <div id="datasetConfigResult" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="card mb-4">
+        <div class="card-header">Configuration Summary</div>
+        <div class="card-body">
+            <button class="btn btn-info" onclick="fetchSummary()">Get Summary</button>
+            <pre id="summaryResult" class="mt-3"></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleModelFields() {
+        const modelType = document.getElementById("model_type").value;
+        document.getElementById("model_py_file_group").style.display = modelType === "untrained" || modelType === "custom_pretrained" ? "block" : "none";
+        document.getElementById("model_pth_file_group").style.display = modelType === "custom_pretrained" ? "block" : "none";
+        document.getElementById("torch_vision_model_group").style.display = modelType === "torch_vision_pretrained" ? "block" : "none";
+    }
+
+    function toggleDatasetFields() {
+        const datasetType = document.getElementById("dataset_type").value;
+        document.getElementById("custom_dataset_group").style.display = datasetType === "custom_dataset" ? "block" : "none";
+        document.getElementById("torch_vision_dataset_group").style.display = datasetType === "torch_vision_dataset" ? "block" : "none";
+    }
+
+    function clearError(id) {
+        document.getElementById(id).classList.remove("error");
+        document.getElementById(id + "_error").textContent = "";
+    }
+
+    function setError(id, message) {
+        document.getElementById(id).classList.add("error");
+        document.getElementById(id + "_error").textContent = message;
+    }
+
+    function validateInputs() {
+        let isValid = true;
+        const requiredFields = ["prj_name", "project_folder", "model_type", "dataset_type"];
+
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (!element.value && element.files.length === 0) {
+                setError(field, `${field.replace('_', ' ')} is required.`);
+                isValid = false;
+            } else {
+                clearError(field);
+            }
+        });
+
+        return isValid;
+    }
+
+    async function fetchSummary() {
+        if (!validateInputs()) {
+            return;
+        }
+        const response = await fetch("http://127.0.0.1:5000/api/summary");
+        const result = await response.json();
+        document.getElementById("summaryResult").textContent = JSON.stringify(result, null, 2);
+    }
+</script>
+</body>
+</html>
+
