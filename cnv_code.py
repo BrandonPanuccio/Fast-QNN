@@ -8,12 +8,14 @@ import torch
 import onnx
 from finn.util.test import get_test_model_trained
 from brevitas.export import export_qonnx
+import brevitas.onnx as bo
 from qonnx.util.cleanup import cleanup as qonnx_cleanup
 from qonnx.core.modelwrapper import ModelWrapper
 from finn.transformation.qonnx.convert_qonnx_to_finn import ConvertQONNXtoFINN
 from qonnx.transformation.infer_shapes import InferShapes
 from qonnx.transformation.fold_constants import FoldConstants
 from qonnx.transformation.general import GiveReadableTensorNames, GiveUniqueNodeNames, RemoveStaticGraphInputs
+from finn.transformation.qonnx.qonnx_activation_handlers import QuantReluHandler
 
 cnv = get_test_model_trained("CNV", 1, 1)
 export_onnx_path = build_dir + "/end2end_cnv_w1a1_export.onnx"
@@ -179,3 +181,6 @@ from finn.transformation.fpgadataflow.make_pynq_driver import MakePYNQDriver
 model = model.transform(MakePYNQDriver("zynq-iodma"))
 model.save(build_dir + "/end2end_cnv_w1a1_synth.onnx")
 
+model.graph.initializer.extend([
+                    scale_initializer, zero_point_initializer, bit_width_initializer
+                ])

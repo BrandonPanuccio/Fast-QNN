@@ -1,17 +1,8 @@
-import netron
-from finn.util.visualization import showSrc, showInNetron
-from finn.util.basic import make_build_dir
-import os
+import math
 
-build_dir = "Fast-QNN/outputs/txaviour/AlexNet"
-
-import torch
-import onnx
-from finn.util.test import get_test_model_trained
-from brevitas.export import export_qonnx
-from qonnx.util.cleanup import cleanup as qonnx_cleanup
-
-alexnet = torch.hub.load('pytorch/vision:v0.10.0', 'alexnet', pretrained=True)
-export_onnx_path = build_dir+"/tfc_w1_a1.onnx"
-export_qonnx(alexnet, torch.rand(1, 3, 224, 224), build_dir+"/tfc_w1_a1.onnx")
-qonnx_cleanup(export_onnx_path, out_file=export_onnx_path)
+x = -9000
+out = x * x  # Step 1: Square the input (ensures positive values)
+out = out + 1e-6  # Step 2: Add a small constant for numerical stability
+out = math.sqrt(out)  # Step 3: Take the square root to restore the magnitude
+out = (x + out) / 2  # Step 4: Combine the original and adjusted values, then scale
+print(out)
