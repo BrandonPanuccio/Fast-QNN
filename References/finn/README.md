@@ -12,8 +12,10 @@ cd finn
 
 git checkout 52c092568de3ac27102205d03335b17f8a66aee5 
 ```
-Download the files from this folder and put them in their respective directories in your cloned finn directory.
+Download the files from this folder and put them in their respective directories in your cloned finn directory. Chmod proper directories based on lcoation and username
 ```
+sudo chmod -R 777 ~/finn/
+sudo chmod -R 777 /tmp/finn_dev_fastqnn/
 ./run-docker.sh quicktest 
 ```
 If the above isn’t working run the following. Make sure to put the downloaded files in the respective folders again after the checkout (There should be 0 failed in the quicktest – everything else is fine)
