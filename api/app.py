@@ -1,45 +1,43 @@
 from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
-import subprocess
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all domains on all routes
+
+# Global variable to store configuration data
+config_data = {}
 
 @app.route('/')
-def api_test():
-    # Ensure this matches the HTML file name in the templates folder
-    return render_template("ui_development.html")
-
-@app.route('/run-command', methods=['POST'])
-def run_command():
+def home():
     """
-    Endpoint to execute a command on localhost and return its output.
+    Renders the first UI page (ui_step1.html) where the user enters the configuration data.
     """
-    # Parse JSON data from the request body
-    data = request.get_json()
+    return render_template("ui_step1.html")
 
-    if not data or 'command' not in data:
-        # Return error if JSON data or command is missing
-        return jsonify({"error": "No command provided in the JSON request."}), 400
+@app.route('/submit-config', methods=['POST'])
+def submit_config():
+    """
+    Receives configuration data from ui_step1.html and stores it in a global variable.
+    Responds with a success message.
+    """
+    global config_data
+    config_data = request.json  # Store the received data
+    return jsonify({"message": "Configuration received successfully."}), 200
 
-    command = data['command']
+@app.route('/ui_step2.html')
+def results_page():
+    """
+    Renders the second UI page (ui_step2.html) where the configuration data is displayed.
+    """
+    return render_template("ui_step2.html")
 
-    try:
-        # Execute the command locally and capture the output
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10)
-
-        # Return command output or error message
-        if result.returncode == 0:
-            return jsonify({"output": result.stdout})
-        else:
-            return jsonify({"error": result.stderr}), 400
-
-    except subprocess.TimeoutExpired:
-        return jsonify({"error": "Command execution timed out."}), 500
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.route('/get-config', methods=['GET'])
+def get_config():
+    """
+    Sends the stored configuration data to ui_step2.html for display.
+    """
+    return jsonify(config_data)
 
 if __name__ == '__main__':
-    # Run the Flask server
+    # Run the Flask server on localhost at port 5000
     app.run(host="127.0.0.1", port=5000)
+
 

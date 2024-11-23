@@ -1,3 +1,4 @@
+// Toggles visibility of fields in the Model Configuration section
 function toggleModelFields() {
     const modelType = document.getElementById("model_type").value;
     document.getElementById("model_py_file_group").style.display =
@@ -100,65 +101,39 @@ function validateInputs() {
     return isValid;
 }
 
-let savedData = {};
+document.getElementById('submitConfigButton').addEventListener('click', async function () {
+    if (!validateInputs()) return;
 
-function saveInputs() {
-    if (!validateInputs()) {
-        return;
-    }
-
-    const prjName = document.getElementById('prj_name').value.trim();
-    const projectFolder = document.getElementById('project_folder').value.trim();
-    const modelType = document.getElementById('model_type').value;
-    const modelPyFile = document.getElementById('model_py_file').value.trim();
-    const modelPthFile = document.getElementById('model_pth_file').value.trim();
-    const torchVisionModel = document.getElementById('torch_vision_model').value.trim();
-    const datasetType = document.getElementById('dataset_type').value;
-    const customDataset = document.getElementById('custom_dataset').value.trim();
-    const torchVisionDataset = document.getElementById('torch_vision_dataset').value.trim();
-
-    savedData = {
-        prjName,
-        projectFolder,
-        modelType,
-        modelPyFile,
-        modelPthFile,
-        torchVisionModel,
-        datasetType,
-        customDataset,
-        torchVisionDataset
+    const configData = {
+        prjName: document.getElementById('prj_name').value.trim(),
+        projectFolder: document.getElementById('project_folder').value.trim(),
+        modelType: document.getElementById('model_type').value,
+        modelPyFile: document.getElementById('model_py_file').value.trim(),
+        modelPthFile: document.getElementById('model_pth_file').value.trim(),
+        torchVisionModel: document.getElementById('torch_vision_model').value.trim(),
+        datasetType: document.getElementById('dataset_type').value,
+        customDataset: document.getElementById('custom_dataset').value.trim(),
+        torchVisionDataset: document.getElementById('torch_vision_dataset').value.trim()
     };
 
-    alert("Inputs have been successfully saved.");
-}
+    try {
+        const response = await fetch('http://127.0.0.1:5000/submit-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(configData)
+        });
 
-function getSummary() {
-    if (Object.keys(savedData).length === 0) {
-        alert("No data has been saved yet.");
-        return;
+        if (response.ok) {
+            window.location.href = '/ui_step2.html';
+        } else {
+            alert('Failed to submit configuration.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the configuration.');
     }
+});
 
-    let summaryHtml = `
-        <ul>
-            <li><strong>Project Name:</strong> ${savedData.prjName || "Not specified"}</li>
-            <li><strong>Project Folder:</strong> ${savedData.projectFolder || "Not specified"}</li>
-            <li><strong>Model Type:</strong> ${savedData.modelType || "Not specified"}</li>
-            <li><strong>Model Python File:</strong> ${savedData.modelPyFile || "Not specified"}</li>
-            <li><strong>Model PTH File:</strong> ${savedData.modelPthFile || "Not specified"}</li>
-            <li><strong>TorchVision Model:</strong> ${savedData.torchVisionModel || "Not specified"}</li>
-            <li><strong>Dataset Type:</strong> ${savedData.datasetType || "Not specified"}</li>
-            <li><strong>Custom Dataset:</strong> ${savedData.customDataset || "Not specified"}</li>
-            <li><strong>TorchVision Dataset:</strong> ${savedData.torchVisionDataset || "Not specified"}</li>
-        </ul>
-    `;
-
-    document.getElementById('summaryResult').innerHTML = summaryHtml;
-}
-
-document.getElementById('projectSaveButton').addEventListener('click', saveInputs);
-document.getElementById('modelSaveButton').addEventListener('click', saveInputs);
-document.getElementById('datasetSaveButton').addEventListener('click', saveInputs);
-document.getElementById('getSummaryButton').addEventListener('click', getSummary);
 
 
 

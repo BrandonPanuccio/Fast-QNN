@@ -1,23 +1,27 @@
-/* Dark theme styles */
+/* Root Variables for Consistent Dark Theme Colors */
 :root {
-    --background-color: #343a40;
-    --sidebar-color: #212529;
-    --text-color: #ffffff;
-    --accent-color: #007bff;
-    --hover-color: #495057;
+    --background-color: #1c1e21;  /* Darker background for a more modern look */
+    --sidebar-color: #242526;     /* Slightly lighter for contrast with background */
+    --text-color: #e4e6eb;        /* Soft white for less eye strain */
+    --accent-color: #0d6efd;      /* Accent color: blue for buttons and links */
+    --hover-color: #3a3b3c;       /* Hover effect color */
     --font-family: 'Roboto', sans-serif;
+    --card-bg-color: #2f3136;     /* Card background for elevated effect */
+    --border-radius: 8px;         /* Consistent border radius for rounded corners */
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --transition-speed: 0.3s;     /* Standard transition speed for UI elements */
 }
 
-/* General body styles */
+/* General Body Styles */
 body {
     background: linear-gradient(135deg, var(--background-color), var(--sidebar-color));
     color: var(--text-color);
     font-family: var(--font-family);
     line-height: 1.6;
-    transition: all 0.2s ease-in-out;
+    transition: all var(--transition-speed) ease-in-out;
 }
 
-/* Sidebar styling */
+/* Sidebar Styling */
 #wrapper {
     display: flex;
     width: 100%;
@@ -31,29 +35,31 @@ body {
     z-index: 1000;
     background: var(--sidebar-color);
     color: var(--text-color);
-    transition: margin-left 0.3s ease-in-out;
+    transition: margin-left var(--transition-speed) ease-in-out;
+    box-shadow: 2px 0 5px var(--shadow-color); /* Adds a subtle shadow for depth */
 }
 
 #sidebar-wrapper .list-group-item {
     border: none;
     color: var(--text-color);
     background: var(--sidebar-color);
-    transition: all 0.2s ease-in-out;
+    transition: background var(--transition-speed), color var(--transition-speed);
+    padding: 15px;
 }
 
 #sidebar-wrapper .list-group-item:hover {
     background: var(--hover-color);
     font-weight: bold;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 5px var(--shadow-color); /* Adds depth on hover */
 }
 
-/* Main content wrapper */
+/* Main Content Wrapper */
 #page-content-wrapper {
     margin-left: 250px;
     width: 100%;
     padding: 20px;
-    background: linear-gradient(135deg, var(--background-color), var(--sidebar-color));
-    transition: all 0.3s ease;
+    background: var(--background-color);
+    transition: all var(--transition-speed) ease;
 }
 
 #wrapper.toggled #sidebar-wrapper {
@@ -64,61 +70,66 @@ body {
     margin-left: 0;
 }
 
-/* Navbar styling */
+/* Navbar Styling */
 .navbar {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    background: var(--sidebar-color);
+    color: var(--text-color);
+    box-shadow: 0 4px 8px var(--shadow-color);
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--hover-color);
 }
 
 .nav-link, .navbar-brand {
     color: var(--text-color);
     font-size: 16px;
-    transition: color 0.2s;
+    transition: color var(--transition-speed);
 }
 
 .nav-link:hover, .navbar-brand:hover {
-    color: #adb5bd;
+    color: #adb5bd;  /* Lighter gray on hover */
     background-color: var(--hover-color);
     padding: 10px;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     text-decoration: underline;
 }
 
-/* Card styling */
+/* Card Styling */
 .card {
-    background: linear-gradient(135deg, var(--sidebar-color), var(--background-color));
+    background: var(--card-bg-color);
     border: none;
     color: var(--text-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px var(--shadow-color);
+    padding: 20px;
 }
 
-/* Button styling */
+/* Button Styling */
 .btn-primary {
     background-color: var(--accent-color);
     border-color: var(--accent-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px var(--shadow-color);
+    transition: background-color var(--transition-speed), border-color var(--transition-speed), box-shadow var(--transition-speed);
 }
 
 .btn-primary:hover {
     background-color: #0056b3;
     border-color: #0056b3;
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 10px var(--shadow-color);
 }
 
 .btn-primary:focus, .nav-link:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5); /* Focus state for accessibility */
 }
 
-/* Footer styling */
+/* Footer Styling */
 footer {
     padding-top: 20px;
     font-size: 14px;
     color: #adb5bd;
     background-color: var(--sidebar-color);
+    text-align: center;
 }
 
 footer a {
@@ -131,7 +142,7 @@ footer a:hover {
     text-decoration: underline;
 }
 
-/* Responsive sidebar and navbar */
+/* Responsive Sidebar and Navbar */
 @media (max-width: 768px) {
     #sidebar-wrapper {
         width: 100px;
@@ -150,18 +161,35 @@ footer a:hover {
     }
 }
 
-/* Output styling */
+/* Output and Error Styling */
 #output {
-    background-color: #495057;  /* Slightly lighter dark background */
-    color: #ffffff;  /* White text for visibility */
+    background-color: #3a3b3c; /* Slightly lighter dark background */
+    color: #e4e6eb;            /* Light text for visibility */
     padding: 10px;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     margin-top: 15px;
-    white-space: pre-wrap; /* Keeps formatting for command output */
+    white-space: pre-wrap;     /* Keeps formatting for command output */
+    box-shadow: 0 2px 4px var(--shadow-color); /* Shadow for depth */
 }
 
 #error {
     color: red;
     font-weight: bold;
 }
+
+/* Form Validation Styling */
+.form-control:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.error-border {
+    border: 2px solid red;
+}
+
+.error-message {
+    color: red;
+    font-size: 0.85em;
+}
+
 
