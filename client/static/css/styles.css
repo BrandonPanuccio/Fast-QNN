@@ -1,0 +1,110 @@
+/* Root Variables for Modern Dark Theme */
+:root {
+    --background-color: #1e1e2f;
+    --sidebar-color: #27293d;
+    --card-bg-color: #2b2c40;
+    --field-bg-color: #3a3b4e;
+    --text-color: #f0f0f5;
+    --accent-color: #4a90e2;
+    --hover-color: #3c3d50;
+    --font-family: 'Roboto', sans-serif;
+    --border-radius: 8px;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --transition-speed: 0.3s;
+}
+
+/* Global Body Styling */
+body {
+    background: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--font-family), sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    transition: all var(--transition-speed) ease-in-out;
+}
+
+/* Form Elements */
+.form-control {
+    background-color: var(--field-bg-color);
+    color: var(--text-color);
+    border: 1px solid #55576b;
+    border-radius: var(--border-radius);
+    padding: 6px 10px; /* Balanced padding for alignment */
+    box-sizing: border-box;
+    font-size: 14px; /* Matches design */
+    height: 42px; /* Increased height for better readability */
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.form-control:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 5px rgba(74, 144, 226, 0.5);
+}
+
+/* File Input Styling */
+input[type="file"] {
+    color: var(--text-color);
+    background-color: var(--field-bg-color);
+    padding: 6px; /* Reduced padding for better fit */
+    border-radius: var(--border-radius);
+    border: 1px solid #55576b;
+    display: inline-block;
+    box-sizing: border-box;
+    height: 42px; /* Increased height to match other inputs */
+}
+
+/* Select Styling */
+select.form-control {
+    appearance: none;
+    background-color: var(--field-bg-color);
+    color: var(--text-color);
+    padding: 6px 10px; /* Adjusted padding for vertical centering */
+    border: 1px solid #55576b;
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+    font-size: 14px; /* Matches input text size */
+    height: 42px; /* Increased height for consistency */
+}
+
+#progressUpdates {
+    white-space: pre-wrap; /* Preserve newlines */
+    padding: 10px;
+    border: 1px solid var(--hover-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-bg-color);
+    color: var(--text-color);
+    max-height: 500px; /* Increased height to make it taller */
+    height: 500px; /* Set fixed height for consistency */
+    overflow-y: auto; /* Allow scrolling if necessary */
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Scrollbar Styling for Progress Updates */
+#progressUpdates::-webkit-scrollbar {
+    width: 8px;
+}
+
+#progressUpdates::-webkit-scrollbar-thumb {
+    background-color: var(--hover-color);
+    border-radius: 10px;
+}
+
+#progressUpdates::-webkit-scrollbar-thumb:hover {
+    background-color: var(--accent-color);
+}
+
+/* Highlight field with red border on error */
+.error-border {
+    border: 2px solid red !important;
+}
+
+/* Error message styling */
+.error-message {
+    color: red;
+    font-size: 0.9rem;
+    margin-top: 0.3rem;
+}
+
+

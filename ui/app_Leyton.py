@@ -7,7 +7,7 @@ app.secret_key = 'secret_key'
 # Routes for other pages (About, GitHub, Setup, Jupyter)
 @app.route('/')
 def about():
-    return render_template('index.html')
+    return render_template('setup.html')
 
 
 @app.route('/code/github')

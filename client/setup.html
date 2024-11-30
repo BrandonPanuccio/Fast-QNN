@@ -3,111 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fast QNN Title Page</title>
+    <title>Fast QNN - Setup Page</title>
+    <link rel="stylesheet" href="static/css/styles.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <!-- Link to the custom stylesheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="bg-light">
+<body class="bg-dark text-white">
 <div class="container mt-5">
-    <h1 class="text-center mb-4">Fast QNN Title Page</h1>
+    <h1 class="text-center mb-4">Fast QNN - Setup Page</h1>
 
     <!-- Project Setup Section -->
-    <div class="card mb-4">
+    <div class="card bg-secondary text-white mb-4">
         <div class="card-header">Project Setup</div>
         <div class="card-body">
             <div class="form-group">
-                <label for="prj_name">Project Name</label>
-                <input type="text" id="prj_name" class="form-control" placeholder="Enter project name">
-                <div id="prj_name_error" class="error-message"></div>
+                <label for="projectName">Project Name</label>
+                <input type="text" id="projectName" name="prj_name" class="form-control" placeholder="Enter project name">
+                <div id="projectName_error" class="error-message"></div>
             </div>
             <div class="form-group">
                 <label for="project_folder">Select Project Folder</label>
-                <input type="file" id="project_folder" class="form-control" webkitdirectory>
+                <input type="file" id="project_folder" name="project_folder" class="form-control" webkitdirectory>
                 <div id="project_folder_error" class="error-message"></div>
             </div>
-            <button class="btn btn-primary" id="projectSaveButton">Save Project Setup</button>
-            <div id="projectSetupResult" class="mt-3"></div>
         </div>
     </div>
 
     <!-- Model Configuration Section -->
-    <div class="card mb-4">
+    <div class="card bg-secondary text-white mb-4">
         <div class="card-header">Model Configuration</div>
         <div class="card-body">
             <div class="form-group">
-                <label for="model_type">Model Type</label>
-                <select id="model_type" class="form-control" onchange="toggleModelFields()">
-                    <option value="">Select model type</option>
+                <label for="modelType">Model Type</label>
+                <select id="modelType" name="model_type" class="form-control">
+                    <option value="">-- Select Model Type --</option>
                     <option value="untrained">Untrained</option>
                     <option value="custom_pretrained">Custom Pretrained</option>
                     <option value="torch_vision_pretrained">TorchVision Pretrained</option>
                 </select>
-                <div id="model_type_error" class="error-message"></div>
+                <div id="modelType_error" class="error-message"></div>
             </div>
             <div class="form-group" id="model_py_file_group" style="display: none;">
-                <label for="model_py_file">Select Model Python File</label>
-                <input type="file" id="model_py_file" class="form-control">
+                <label for="model_py_file">Select Model Python File (.py)</label>
+                <input type="file" id="model_py_file" name="model_py_file" class="form-control">
                 <div id="model_py_file_error" class="error-message"></div>
             </div>
             <div class="form-group" id="model_pth_file_group" style="display: none;">
                 <label for="model_pth_file">Select Model Weights File (.pth)</label>
-                <input type="file" id="model_pth_file" class="form-control">
+                <input type="file" id="model_pth_file" name="model_pth_file" class="form-control">
                 <div id="model_pth_file_error" class="error-message"></div>
             </div>
             <div class="form-group" id="torch_vision_model_group" style="display: none;">
                 <label for="torch_vision_model">TorchVision Model Name</label>
-                <input type="text" id="torch_vision_model" class="form-control" placeholder="Enter TorchVision model name">
+                <input type="text" id="torch_vision_model" name="torch_vision_model" class="form-control" placeholder="Enter TorchVision model name" list="torchvisionModelList">
+                <datalist id="torchvisionModelList"></datalist>
                 <div id="torch_vision_model_error" class="error-message"></div>
             </div>
-            <button class="btn btn-primary" id="modelSaveButton">Save Model Configuration</button>
-            <div id="modelConfigResult" class="mt-3"></div>
         </div>
     </div>
 
     <!-- Dataset Configuration Section -->
-    <div class="card mb-4">
+    <div class="card bg-secondary text-white mb-4">
         <div class="card-header">Dataset Configuration</div>
         <div class="card-body">
             <div class="form-group">
-                <label for="dataset_type">Dataset Type</label>
-                <select id="dataset_type" class="form-control" onchange="toggleDatasetFields()">
-                    <option value="">Select dataset type</option>
+                <label for="datasetType">Dataset Type</label>
+                <select id="datasetType" name="dataset_type" class="form-control">
+                    <option value="">-- Select Dataset Type --</option>
                     <option value="torch_vision_dataset">TorchVision Dataset</option>
                     <option value="custom_dataset">Custom Dataset</option>
                 </select>
-                <div id="dataset_type_error" class="error-message"></div>
+                <div id="datasetType_error" class="error-message"></div>
             </div>
             <div class="form-group" id="custom_dataset_group" style="display: none;">
-                <label for="custom_dataset">Select Custom Dataset Archive (zip/tar)</label>
-                <input type="file" id="custom_dataset" class="form-control">
+                <label for="custom_dataset">Select Custom Dataset Archive (.zip or .tar)</label>
+                <input type="file" id="custom_dataset" name="custom_dataset" class="form-control">
                 <div id="custom_dataset_error" class="error-message"></div>
             </div>
             <div class="form-group" id="torch_vision_dataset_group" style="display: none;">
                 <label for="torch_vision_dataset">TorchVision Dataset Name</label>
-                <input type="text" id="torch_vision_dataset" class="form-control" placeholder="Enter TorchVision dataset name">
+                <input type="text" id="torch_vision_dataset" name="torch_vision_dataset" class="form-control" placeholder="Enter TorchVision dataset name" list="torchvisionDatasetList">
+                <datalist id="torchvisionDatasetList"></datalist>
                 <div id="torch_vision_dataset_error" class="error-message"></div>
             </div>
-            <button class="btn btn-primary" id="datasetSaveButton">Save Dataset Configuration</button>
-            <div id="datasetConfigResult" class="mt-3"></div>
         </div>
     </div>
 
-    <!-- Submit button to send data to the API -->
-    <div class="text-center mt-4">
-        <button class="btn btn-success" id="submitConfigButton">Submit Configuration</button>
+    <!-- Submit Configuration Button -->
+    <div class="text-center">
+        <button id="submitButton" class="btn btn-success">Submit Configuration</button>
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script src="static/js/app.js"></script>
 </body>
 </html>
-
-
-
-
-
-
 
 
 
