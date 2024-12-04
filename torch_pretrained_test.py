@@ -12,13 +12,18 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 # Define the datasets and transformations
 def get_data_loaders(dataset_name, batch_size=64):
+    mnist_transform = transforms.Compose([transforms.Grayscale(num_output_channels=3),
+                                    transforms.Resize((224, 224)),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
     transform = transforms.Compose([transforms.Resize((224, 224)),
                                     transforms.ToTensor(),
                                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
     if dataset_name == 'MNIST':
-        trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-        testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+        trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=mnist_transform)
+        testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=mnist_transform)
     elif dataset_name == 'CIFAR10':
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
         testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
