@@ -6,24 +6,36 @@ import torch.optim as optim
 from torchvision import models
 from sklearn.metrics import classification_report
 import numpy as np
+import argparse
 import time
 from torch.profiler import profile, record_function, ProfilerActivity
 
 
 # Define the datasets and transformations
 def get_data_loaders(dataset_name, batch_size=64):
-    mnist_transform = transforms.Compose([transforms.Grayscale(num_output_channels=3),
-                                    transforms.Resize((224, 224)),
-                                    transforms.ToTensor(),
-                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-    transform = transforms.Compose([transforms.Resize((224, 224)),
-                                    transforms.ToTensor(),
-                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    if dataset_name == 'MNIST':
+        transform = transforms.Compose([
+            transforms.Grayscale(num_output_channels=3),
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
+    elif dataset_name == 'CIFAR10':
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))
+        ])
+    elif dataset_name == 'ImageNet':
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        ])
 
     if dataset_name == 'MNIST':
-        trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=mnist_transform)
-        testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=mnist_transform)
+        trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+        testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
     elif dataset_name == 'CIFAR10':
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
         testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
@@ -73,7 +85,7 @@ def test_model(model, testloader, device):
     avg_loss = running_loss / len(testloader)
     avg_latency = total_inference_time / total_images
     throughput = total_images / total_inference_time
-    report = classification_report(all_labels, all_preds, output_dict=True, zero_division=0)
+    report = classification_report(all_labels, all_preds, output_dict=True)
 
     # Measure FLOPs using torch.profiler
     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], with_flops=True) as prof:
@@ -129,37 +141,44 @@ def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
 
     print('Finished Training')
 
+def main():
+    parser = argparse.ArgumentParser(description='Train and Test Models on Different Datasets')
+    parser.add_argument('--model', type=str, choices=['AlexNet', 'ResNet50'], required=True, help='The model to train and test')
+    parser.add_argument('--dataset', type=str, choices=['MNIST', 'CIFAR10', 'ImageNet'], required=True, help='The dataset to use')
+    args = parser.parse_args()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if torch.cuda.device_count() > 1:
-    print(f"Using {torch.cuda.device_count()} GPUs!")
-datasets = ['MNIST']
-# datasets = ['MNIST', 'CIFAR10', 'ImageNet']
-models_to_test = {'AlexNet': models.alexnet(pretrained=False),
-                  'ResNet50': models.resnet50(pretrained=False)}
+    model_name = args.model
+    dataset_name = args.dataset
 
-with open("model_evaluation_results.txt", "w") as f:
-    for dataset_name in datasets:
-        f.write(f"Training on dataset: {dataset_name}")
-        print(f"Training on dataset: {dataset_name}")
-        trainloader, testloader = get_data_loaders(dataset_name)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs!")
 
-        for model_name, model in models_to_test.items():
-            f.write(f"Training model: {model_name}")
-        print(f"Training model: {model_name}")
-        model = nn.DataParallel(model)
-        model = model.to(device)
-        train_model(model, trainloader, device)
+    models_to_test = {'AlexNet': models.alexnet(pretrained=False),
+                      'ResNet50': models.resnet50(pretrained=False)}
 
-        f.write(f"Testing model: {model_name}")
-        print(f"\nTesting on dataset: {dataset_name}")
-        trainloader, testloader = get_data_loaders(dataset_name)
+    trainloader, testloader = get_data_loaders(dataset_name)
 
-        for model_name, model in models_to_test.items():
-            f.write(f"\nEvaluating model: {model_name}\n")
+    model = models_to_test[model_name]
+    model = nn.DataParallel(model)
+    model = model.to(device)
+
+    output_filename = f"{model_name}_{dataset_name}_evaluation_results.txt"
+    with open(output_filename, "w") as f:
+        # Training Phase
+        f.write(f"\nTraining on dataset: {dataset_name}\n")
+        print(f"\nTraining on dataset: {dataset_name}")
+        f.write(f"\nTraining model: {model_name}\n")
+        print(f"\nTraining model: {model_name}")
+
+        if model_name == 'AlexNet':
+            train_model(model, trainloader, device, epochs=20, learning_rate=0.01)
+        elif model_name == 'ResNet50':
+            train_model(model, trainloader, device, epochs=30, learning_rate=0.001)
+
+        # Testing Phase
+        f.write(f"\nEvaluating model: {model_name}\n")
         print(f"\nEvaluating model: {model_name}")
-        model = nn.DataParallel(model)
-        model = model.to(device)
         metrics = test_model(model, testloader, device)
 
         f.write(f"Accuracy: {metrics['accuracy']:.2f}%\n")
@@ -179,3 +198,6 @@ with open("model_evaluation_results.txt", "w") as f:
         print(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image")
         print(f"Throughput: {metrics['throughput']:.2f} images/second")
         print(f"FLOPs: {metrics['flops']}")
+
+if __name__ == "__main__":
+    main()
