@@ -167,7 +167,7 @@ def main():
                     print(f"\nTraining model: {model_name}")
 
                     if model_name == 'AlexNet':
-                        train_model(model, trainloader, device, epochs=100, learning_rate=0.0001)
+                        train_model(model, trainloader, device, epochs=50, learning_rate=0.0001)
                     elif model_name == 'ResNet50':
                         train_model(model, trainloader, device, epochs=30, learning_rate=0.001)
 
