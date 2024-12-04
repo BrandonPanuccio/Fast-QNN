@@ -1,4 +1,5 @@
 const API_BASE = "http://127.0.0.1:5000"; // API base URL
+//const API_BASE = `http://${window.location.hostname}:5000`; // Dynamically determine API base
 
 /**
  * Validate file input for allowed extensions.
@@ -116,12 +117,6 @@ function validateInputs() {
         isValid = false;
     }
 
-    // Validate project folder
-    const projectFolder = document.getElementById("project_folder").files;
-    if (!projectFolder.length) {
-        setError("project_folder", "Project folder is required.");
-        isValid = false;
-    }
 
     // Validate model type
     const modelType = document.getElementById("modelType").value;
@@ -200,13 +195,16 @@ async function submitConfiguration(event) {
     const modelType = document.getElementById("modelType").value;
     const datasetType = document.getElementById("datasetType").value;
 
+
     if (modelType === "torch_vision_pretrained") {
         const torchVisionModel = document.getElementById("torch_vision_model").value.trim();
         formData.append("torch_vision_model", torchVisionModel);
+        localStorage.setItem("torch_vision_model", document.getElementById("torch_vision_model").value.trim());
     }
     if (datasetType === "torch_vision_dataset") {
         const torchVisionDataset = document.getElementById("torch_vision_dataset").value.trim();
         formData.append("torch_vision_dataset", torchVisionDataset);
+        localStorage.setItem("torch_vision_dataset", document.getElementById("torch_vision_dataset").value.trim());
     }
 
     try {
@@ -220,8 +218,17 @@ async function submitConfiguration(event) {
             throw new Error(result.error || "Unknown error occurred.");
         }
 
+        // Save data to localStorage
+        localStorage.setItem("projectName", document.getElementById("projectName").value.trim());
+        localStorage.setItem("modelType", document.getElementById("modelType").value);
+        localStorage.setItem("datasetType", document.getElementById("datasetType").value);
+        localStorage.setItem("model_py_file", document.getElementById("model_py_file").value);
+        localStorage.setItem("model_pth_file", document.getElementById("model_pth_file").value);
+        localStorage.setItem("custom_dataset", document.getElementById("custom_dataset").value);
+
         alert(result.message);
-        window.location.href = "steps.html";
+        window.location.href = "steps.html"; // Navigate to steps.html
+
     } catch (error) {
         console.error("Error submitting configuration:", error.message || error);
         alert(`Failed to submit configuration. Error: ${error.message || "Unknown error"}`);
@@ -253,14 +260,64 @@ async function fetchUpdates() {
     }
 }
 
+
+/**
+ * Populate summary table in steps.html.
+ */
+/**
+ * Populate summary table in steps.html.
+ */
+function fetchSummary() {
+    const summaryTable = document.getElementById("summaryTable");
+    if (!summaryTable) {
+        console.error("Summary table not found on the page.");
+        return;
+    }
+
+    // Retrieve matching field names from localStorage
+    const projectName = localStorage.getItem("projectName");
+    const modelType = localStorage.getItem("modelType");
+    const datasetType = localStorage.getItem("datasetType");
+    const model_py_file = localStorage.getItem("model_py_file");
+    const model_pth_file = localStorage.getItem("model_pth_file");
+    const torch_vision_model = localStorage.getItem("torch_vision_model");
+    const custom_dataset = localStorage.getItem("custom_dataset");
+    const torch_vision_dataset = localStorage.getItem("torch_vision_dataset");
+
+    const rows = `
+        <tr><td>Project Name</td><td>${projectName || "N/A"}</td></tr>
+        <tr><td>Model Type</td><td>${modelType || "N/A"}</td></tr>
+        <tr><td>Dataset Type</td><td>${datasetType || "N/A"}</td></tr>
+        <tr><td>.py File</td><td>${model_py_file || "N/A"}</td></tr>
+        <tr><td>.pth File</td><td>${model_pth_file|| "N/A"}</td></tr>
+        <tr><td>Torchvision Model</td><td>${torch_vision_model || "N/A"}</td></tr>
+        <tr><td>Custom Dataset</td><td>${custom_dataset || "N/A"}</td></tr>
+        <tr><td>Torchvision Dataset</td><td>${torch_vision_dataset || "N/A"}</td></tr>
+    `;
+    summaryTable.innerHTML = rows;
+}
+
+
+/**
+ * Exit button behavior.
+ */
+function handleExitButtonClick() {
+    alert("Exiting setup process...");
+    window.location.href = "setup.html";
+}
+
 // Attach event listeners
 if (window.location.pathname.endsWith("setup.html")) {
     document.getElementById("submitButton").addEventListener("click", submitConfiguration);
     document.getElementById("modelType").addEventListener("change", toggleModelFields);
     document.getElementById("datasetType").addEventListener("change", toggleDatasetFields);
-    fetchTorchVisionData();
-} else if (window.location.pathname.endsWith("steps.html")) {
+    fetchTorchVisionData();}
+else if (window.location.pathname.endsWith("steps.html")) {
+    fetchSummary();
     fetchUpdates();
+    document.getElementById("exitButton").addEventListener("click", handleExitButtonClick);
 }
+
+
 
 
