@@ -130,57 +130,52 @@ def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
     print('Finished Training')
 
 
-# Main function to train and test AlexNet and ResNet-50 on different datasets
-def main():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs!")
-    datasets = ['MNIST']
-    # datasets = ['MNIST', 'CIFAR10', 'ImageNet']
-    models_to_test = {'AlexNet': models.alexnet(pretrained=False),
-                      'ResNet50': models.resnet50(pretrained=False)}
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.device_count() > 1:
+    print(f"Using {torch.cuda.device_count()} GPUs!")
+datasets = ['MNIST']
+# datasets = ['MNIST', 'CIFAR10', 'ImageNet']
+models_to_test = {'AlexNet': models.alexnet(pretrained=False),
+                  'ResNet50': models.resnet50(pretrained=False)}
 
-    with open("model_evaluation_results.txt", "w") as f:
-        for dataset_name in datasets:
-            f.write(f"Training on dataset: {dataset_name}")
-            print(f"Training on dataset: {dataset_name}")
-            trainloader, testloader = get_data_loaders(dataset_name)
+with open("model_evaluation_results.txt", "w") as f:
+    for dataset_name in datasets:
+        f.write(f"Training on dataset: {dataset_name}")
+        print(f"Training on dataset: {dataset_name}")
+        trainloader, testloader = get_data_loaders(dataset_name)
 
-            for model_name, model in models_to_test.items():
-                f.write(f"Training model: {model_name}")
-            print(f"Training model: {model_name}")
-            model = nn.DataParallel(model)
-            model = model.to(device)
-            train_model(model, trainloader, device)
+        for model_name, model in models_to_test.items():
+            f.write(f"Training model: {model_name}")
+        print(f"Training model: {model_name}")
+        model = nn.DataParallel(model)
+        model = model.to(device)
+        train_model(model, trainloader, device)
 
-            f.write(f"Testing model: {model_name}")
-            print(f"\nTesting on dataset: {dataset_name}")
-            trainloader, testloader = get_data_loaders(dataset_name)
+        f.write(f"Testing model: {model_name}")
+        print(f"\nTesting on dataset: {dataset_name}")
+        trainloader, testloader = get_data_loaders(dataset_name)
 
-            for model_name, model in models_to_test.items():
-                f.write(f"\nEvaluating model: {model_name}\n")
-            print(f"\nEvaluating model: {model_name}")
-            model = nn.DataParallel(model)
-            model = model.to(device)
-            metrics = test_model(model, testloader, device)
+        for model_name, model in models_to_test.items():
+            f.write(f"\nEvaluating model: {model_name}\n")
+        print(f"\nEvaluating model: {model_name}")
+        model = nn.DataParallel(model)
+        model = model.to(device)
+        metrics = test_model(model, testloader, device)
 
-            f.write(f"Accuracy: {metrics['accuracy']:.2f}%\n")
-            f.write(f"Loss: {metrics['loss']:.4f}\n")
-            f.write(f"Precision: {metrics['precision']:.4f}\n")
-            f.write(f"Recall: {metrics['recall']:.4f}\n")
-            f.write(f"F1 Score: {metrics['f1_score']:.4f}\n")
-            f.write(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image\n")
-            f.write(f"Throughput: {metrics['throughput']:.2f} images/second\n")
-            f.write(f"FLOPs: {metrics['flops']}\n")
+        f.write(f"Accuracy: {metrics['accuracy']:.2f}%\n")
+        f.write(f"Loss: {metrics['loss']:.4f}\n")
+        f.write(f"Precision: {metrics['precision']:.4f}\n")
+        f.write(f"Recall: {metrics['recall']:.4f}\n")
+        f.write(f"F1 Score: {metrics['f1_score']:.4f}\n")
+        f.write(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image\n")
+        f.write(f"Throughput: {metrics['throughput']:.2f} images/second\n")
+        f.write(f"FLOPs: {metrics['flops']}\n")
 
-            print(f"Accuracy: {metrics['accuracy']:.2f}%")
-            print(f"Loss: {metrics['loss']:.4f}")
-            print(f"Precision: {metrics['precision']:.4f}")
-            print(f"Recall: {metrics['recall']:.4f}")
-            print(f"F1 Score: {metrics['f1_score']:.4f}")
-            print(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image")
-            print(f"Throughput: {metrics['throughput']:.2f} images/second")
-            print(f"FLOPs: {metrics['flops']}")
-
-if __name__ == "__main__":
-    main()
+        print(f"Accuracy: {metrics['accuracy']:.2f}%")
+        print(f"Loss: {metrics['loss']:.4f}")
+        print(f"Precision: {metrics['precision']:.4f}")
+        print(f"Recall: {metrics['recall']:.4f}")
+        print(f"F1 Score: {metrics['f1_score']:.4f}")
+        print(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image")
+        print(f"Throughput: {metrics['throughput']:.2f} images/second")
+        print(f"FLOPs: {metrics['flops']}")
