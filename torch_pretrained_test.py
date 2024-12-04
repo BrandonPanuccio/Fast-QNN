@@ -182,5 +182,5 @@ def main():
             print(f"Throughput: {metrics['throughput']:.2f} images/second")
             print(f"FLOPs: {metrics['flops']}")
 
-            if __name__ == "__main__":
-                main()
+if __name__ == "__main__":
+    main()
