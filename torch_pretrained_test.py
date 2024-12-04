@@ -73,7 +73,7 @@ def test_model(model, testloader, device):
     avg_loss = running_loss / len(testloader)
     avg_latency = total_inference_time / total_images
     throughput = total_images / total_inference_time
-    report = classification_report(all_labels, all_preds, output_dict=True)
+    report = classification_report(all_labels, all_preds, output_dict=True, zero_division=0)
 
     # Measure FLOPs using torch.profiler
     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], with_flops=True) as prof:
@@ -95,46 +95,92 @@ def test_model(model, testloader, device):
     return metrics
 
 
-# Main function to test AlexNet and ResNet-50 on different datasets
+# Training function for AlexNet and ResNet-50 models on different datasets
+def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    model.train()
+
+    for epoch in range(epochs):
+        running_loss = 0.0
+        correct = 0
+        total = 0
+        for i, data in enumerate(trainloader, 0):
+            inputs, labels = data
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            # Zero the parameter gradients
+            optimizer.zero_grad()
+
+            # Forward + backward + optimize
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            # Print statistics
+            running_loss += loss.item()
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+        print(
+            f"Epoch {epoch + 1}/{epochs}, Loss: {running_loss / len(trainloader):.4f}, Accuracy: {100 * correct / total:.2f}%")
+
+    print('Finished Training')
+
+
+# Main function to train and test AlexNet and ResNet-50 on different datasets
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if torch.cuda.device_count() > 1:
         print(f"Using {torch.cuda.device_count()} GPUs!")
-    datasets = ['MNIST', 'CIFAR10', 'ImageNet']
-    models_to_test = {'AlexNet': models.alexnet(pretrained=True),
-                      'ResNet50': models.resnet50(pretrained=True)}
+    datasets = ['MNIST']
+    # datasets = ['MNIST', 'CIFAR10', 'ImageNet']
+    models_to_test = {'AlexNet': models.alexnet(pretrained=False),
+                      'ResNet50': models.resnet50(pretrained=False)}
 
     with open("model_evaluation_results.txt", "w") as f:
         for dataset_name in datasets:
-            f.write(f"\nTesting on dataset: {dataset_name}\n")
+            f.write(f"Training on dataset: {dataset_name}")
+            print(f"Training on dataset: {dataset_name}")
+            trainloader, testloader = get_data_loaders(dataset_name)
+
+            for model_name, model in models_to_test.items():
+                f.write(f"Training model: {model_name}")
+            print(f"Training model: {model_name}")
+            model = nn.DataParallel(model)
+            model = model.to(device)
+            train_model(model, trainloader, device)
+
+            f.write(f"Testing model: {model_name}")
             print(f"\nTesting on dataset: {dataset_name}")
             trainloader, testloader = get_data_loaders(dataset_name)
 
             for model_name, model in models_to_test.items():
                 f.write(f"\nEvaluating model: {model_name}\n")
-                print(f"\nEvaluating model: {model_name}")
-                model = nn.DataParallel(model)
-                model = model.to(device)
-                metrics = test_model(model, testloader, device)
+            print(f"\nEvaluating model: {model_name}")
+            model = nn.DataParallel(model)
+            model = model.to(device)
+            metrics = test_model(model, testloader, device)
 
-                f.write(f"Accuracy: {metrics['accuracy']:.2f}%\n")
-                f.write(f"Loss: {metrics['loss']:.4f}\n")
-                f.write(f"Precision: {metrics['precision']:.4f}\n")
-                f.write(f"Recall: {metrics['recall']:.4f}\n")
-                f.write(f"F1 Score: {metrics['f1_score']:.4f}\n")
-                f.write(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image\n")
-                f.write(f"Throughput: {metrics['throughput']:.2f} images/second\n")
-                f.write(f"FLOPs: {metrics['flops']}\n")
+            f.write(f"Accuracy: {metrics['accuracy']:.2f}%\n")
+            f.write(f"Loss: {metrics['loss']:.4f}\n")
+            f.write(f"Precision: {metrics['precision']:.4f}\n")
+            f.write(f"Recall: {metrics['recall']:.4f}\n")
+            f.write(f"F1 Score: {metrics['f1_score']:.4f}\n")
+            f.write(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image\n")
+            f.write(f"Throughput: {metrics['throughput']:.2f} images/second\n")
+            f.write(f"FLOPs: {metrics['flops']}\n")
 
-                print(f"Accuracy: {metrics['accuracy']:.2f}%")
-                print(f"Loss: {metrics['loss']:.4f}")
-                print(f"Precision: {metrics['precision']:.4f}")
-                print(f"Recall: {metrics['recall']:.4f}")
-                print(f"F1 Score: {metrics['f1_score']:.4f}")
-                print(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image")
-                print(f"Throughput: {metrics['throughput']:.2f} images/second")
-                print(f"FLOPs: {metrics['flops']}")
+            print(f"Accuracy: {metrics['accuracy']:.2f}%")
+            print(f"Loss: {metrics['loss']:.4f}")
+            print(f"Precision: {metrics['precision']:.4f}")
+            print(f"Recall: {metrics['recall']:.4f}")
+            print(f"F1 Score: {metrics['f1_score']:.4f}")
+            print(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image")
+            print(f"Throughput: {metrics['throughput']:.2f} images/second")
+            print(f"FLOPs: {metrics['flops']}")
 
-
-if __name__ == "__main__":
-    main()
+            if __name__ == "__main__":
+                main()
