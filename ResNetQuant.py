@@ -91,15 +91,3 @@ class ResNet50Quant(nn.Module):
         out = torch.flatten(out, 1)
         out = self.fc(out)
         return out
-
-
-def resnet50_quant(num_classes=1000, weight_bit_width=1, act_bit_width=1):
-    return ResNet50Quant(num_classes=num_classes, weight_bit_width=weight_bit_width, act_bit_width=act_bit_width)
-
-
-# Example usage
-if __name__ == "__main__":
-    model = resnet50_quant(num_classes=1000, weight_bit_width=1, act_bit_width=1)
-    sample_input = torch.randn(1, 3, 224, 224)
-    output = model(sample_input)
-    print(output.shape)

@@ -8,6 +8,8 @@ from sklearn.metrics import classification_report
 import numpy as np
 import time
 from torch.profiler import profile, record_function, ProfilerActivity
+from AlexNetQuant import AlexNetQuant
+from ResNetQuant import ResNet50Quant
 
 # Define the datasets and transformations
 def get_data_loaders(dataset_name, batch_size=64):
@@ -146,8 +148,16 @@ def main():
 
     datasets = ['MNIST', 'CIFAR10']
     models_to_test = {
-        'AlexNet': models.alexnet(pretrained=False),
-        'ResNet50': models.resnet50(pretrained=False)
+        'AlexNetQuant_1w1a': AlexNetQuant(num_classes=10, weight_bit_width=1, act_bit_width=1),
+        'ResNet50Quant_1w1a': ResNet50Quant(num_classes=10, weight_bit_width=1, act_bit_width=1),
+        'AlexNetQuant_2w2a': AlexNetQuant(num_classes=10, weight_bit_width=2, act_bit_width=2),
+        'ResNet50Quant_2w2a': ResNet50Quant(num_classes=10, weight_bit_width=2, act_bit_width=2),
+        'AlexNetQuant_3w3a': AlexNetQuant(num_classes=10, weight_bit_width=3, act_bit_width=3),
+        'ResNet50Quant_3w3a': ResNet50Quant(num_classes=10, weight_bit_width=3, act_bit_width=3),
+        'AlexNetQuant_4w4a': AlexNetQuant(num_classes=10, weight_bit_width=4, act_bit_width=4),
+        'ResNet50Quant_4w4a': ResNet50Quant(num_classes=10, weight_bit_width=4, act_bit_width=4),
+        'AlexNetQuant_8w8a': AlexNetQuant(num_classes=10, weight_bit_width=8, act_bit_width=8),
+        'ResNet50Quant_8w8a': ResNet50Quant(num_classes=10, weight_bit_width=8, act_bit_width=8)
     }
 
     for dataset_name in datasets:
@@ -167,14 +177,16 @@ def main():
                     print(f"\nTraining model: {model_name}")
 
                     if model_name == 'AlexNet':
-                        train_model(model, trainloader, device, epochs=50, learning_rate=0.0001)
+                        train_model(model, trainloader, device, epochs=30, learning_rate=0.0001)
                     elif model_name == 'ResNet50':
-                        train_model(model, trainloader, device, epochs=30, learning_rate=0.001)
+                        train_model(model, trainloader, device, epochs=15, learning_rate=0.001)
+                torch.save(model.state_dict(), f"{model_name}_{dataset_name}_trained.pth")
 
                 # Testing Phase
                 f.write(f"\nEvaluating model: {model_name}\n")
                 print(f"\nEvaluating model: {model_name}")
                 metrics = test_model(model, testloader, device)
+                torch.save(model.state_dict(), f"{model_name}_{dataset_name}_evaluated.pth")
 
                 f.write(f"Accuracy: {metrics['accuracy']:.2f}%\n")
                 f.write(f"Loss: {metrics['loss']:.4f}\n")

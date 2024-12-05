@@ -52,14 +52,3 @@ class AlexNetQuant(nn.Module):
         x = self.classifier(x)
         return x
 
-
-def alexnet_quant(num_classes=1000, weight_bit_width=1, act_bit_width=1):
-    return AlexNetQuant(num_classes=num_classes, weight_bit_width=weight_bit_width, act_bit_width=act_bit_width)
-
-
-# Example usage
-if __name__ == "__main__":
-    model = alexnet_quant(num_classes=1000, weight_bit_width=1, act_bit_width=1)
-    sample_input = torch.randn(1, 3, 224, 224)
-    output = model(sample_input)
-    print(output.shape)
