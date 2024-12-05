@@ -34,7 +34,7 @@ def get_data_loaders(dataset_name, batch_size=128, validation_split=0.1):
     if dataset_name == 'MNIST':
         transform = transforms.Compose([
             transforms.Grayscale(num_output_channels=3),
-            transforms.Resize((224, 224)),
+            transforms.Resize((32, 32)),
             transforms.ToTensor(),
             transforms.Normalize((0.1307,), (0.3081,))
         ])
@@ -84,7 +84,7 @@ def get_data_loaders(dataset_name, batch_size=128, validation_split=0.1):
 
 
 # Training function for AlexNet and ResNet-50 models on different datasets
-def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=0.01, warmup_epochs=5):
+def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=0.001, warmup_epochs=5):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
     # Add a learning rate scheduler with warm-up
@@ -111,7 +111,7 @@ def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=
             loss.backward()
 
             # Clip gradients to avoid explosion
-            nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
 
             optimizer.step()
 
@@ -194,7 +194,7 @@ def main():
                     print(f"\nTraining model: {model_name}")
 
                     if dataset_name == 'MNIST':
-                        train_model(model, trainloader, valloader, device, epochs=50, learning_rate=0.01)
+                        train_model(model, trainloader, valloader, device, epochs=50, learning_rate=0.001)
                     elif dataset_name == 'CIFAR10':
                         train_model(model, trainloader, valloader, device, epochs=200, learning_rate=0.01)
 
