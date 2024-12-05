@@ -10,6 +10,26 @@ import time
 from torch.profiler import profile, record_function, ProfilerActivity
 from AlexNetQuant import AlexNetQuant
 from ResNetQuant import ResNet50Quant
+import matplotlib.pyplot as plt
+
+
+# Utility to visualize the data pipeline
+def visualize_data(trainloader):
+    data_iter = iter(trainloader)
+    images, labels = next(data_iter)
+    plt.imshow(torchvision.utils.make_grid(images).permute(1, 2, 0))
+    plt.title(f"Labels: {labels.tolist()}")
+    plt.show()
+
+
+# Weight initialization for the model
+def init_weights(m):
+    if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+        nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+    if isinstance(m, nn.BatchNorm2d):
+        nn.init.constant_(m.weight, 1)
+        nn.init.constant_(m.bias, 0)
+
 
 # Define the datasets and transformations
 def get_data_loaders(dataset_name, batch_size=64):
@@ -51,67 +71,10 @@ def get_data_loaders(dataset_name, batch_size=64):
     return trainloader, testloader
 
 
-# Test function to evaluate a model on a given dataset
-def test_model(model, testloader, device):
-    model.eval()
-    criterion = nn.CrossEntropyLoss()
-    correct = 0
-    total = 0
-    all_labels = []
-    all_preds = []
-    running_loss = 0.0
-    total_inference_time = 0.0
-    total_images = 0
-
-    with torch.no_grad():
-        for data in testloader:
-            images, labels = data
-            images, labels = images.to(device), labels.to(device)
-            start_time = time.time()
-            outputs = model(images)
-            inference_time = time.time() - start_time
-            total_inference_time += inference_time
-            total_images += images.size(0)
-            loss = criterion(outputs, labels)
-            running_loss += loss.item()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-
-            all_labels.extend(labels.cpu().numpy())
-            all_preds.extend(predicted.cpu().numpy())
-
-    accuracy = 100 * correct / total
-    avg_loss = running_loss / len(testloader)
-    avg_latency = total_inference_time / total_images
-    throughput = total_images / total_inference_time
-    report = classification_report(all_labels, all_preds, output_dict=True, zero_division=0)
-
-    # Measure FLOPs using torch.profiler
-    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], with_flops=True) as prof:
-        with record_function("model_inference"):
-            model(images)
-    flops = sum([evt.flops for evt in prof.events() if evt.flops is not None])
-
-    metrics = {
-        'accuracy': accuracy,
-        'loss': avg_loss,
-        'precision': report['weighted avg']['precision'],
-        'recall': report['weighted avg']['recall'],
-        'f1_score': report['weighted avg']['f1-score'],
-        'avg_latency': avg_latency,
-        'throughput': throughput,
-        'flops': flops
-    }
-
-    return metrics
-
-
 # Training function for AlexNet and ResNet-50 models on different datasets
 def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    # Add a learning rate scheduler
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.1)
 
     model.train()
@@ -120,26 +83,29 @@ def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
         running_loss = 0.0
         correct = 0
         total = 0
-        for i, data in enumerate(trainloader, 0):
-            inputs, labels = data
+
+        for i, (inputs, labels) in enumerate(trainloader, 0):
             inputs, labels = inputs.to(device), labels.to(device)
 
-            # Zero the parameter gradients
             optimizer.zero_grad()
 
-            # Forward + backward + optimize
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
+
+            # Gradient clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
             optimizer.step()
 
-            # Calculate statistics
             running_loss += loss.item()
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-        # Step the scheduler at the end of the epoch
+            # Log batch loss and gradients
+            print(f"Batch {i + 1}, Loss: {loss.item():.4f}")
+
         scheduler.step()
 
         # Print epoch stats
@@ -148,9 +114,8 @@ def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
             f"Accuracy: {100 * correct / total:.2f}%"
         )
 
-    print('Finished Training')
 
-
+# Main script for training and testing
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if torch.cuda.device_count() > 1:
@@ -160,68 +125,31 @@ def main():
     models_to_test = {
         'AlexNetQuant_1w1a': AlexNetQuant(num_classes=10, weight_bit_width=1, act_bit_width=1),
         'ResNet50Quant_1w1a': ResNet50Quant(num_classes=10, weight_bit_width=1, act_bit_width=1),
-        'AlexNetQuant_2w2a': AlexNetQuant(num_classes=10, weight_bit_width=2, act_bit_width=2),
-        'ResNet50Quant_2w2a': ResNet50Quant(num_classes=10, weight_bit_width=2, act_bit_width=2),
-        'AlexNetQuant_3w3a': AlexNetQuant(num_classes=10, weight_bit_width=3, act_bit_width=3),
-        'ResNet50Quant_3w3a': ResNet50Quant(num_classes=10, weight_bit_width=3, act_bit_width=3),
-        'AlexNetQuant_4w4a': AlexNetQuant(num_classes=10, weight_bit_width=4, act_bit_width=4),
-        'ResNet50Quant_4w4a': ResNet50Quant(num_classes=10, weight_bit_width=4, act_bit_width=4),
-        'AlexNetQuant_8w8a': AlexNetQuant(num_classes=10, weight_bit_width=8, act_bit_width=8),
-        'ResNet50Quant_8w8a': ResNet50Quant(num_classes=10, weight_bit_width=8, act_bit_width=8)
     }
 
     for dataset_name in datasets:
         for model_name, model in models_to_test.items():
-
             trainloader, testloader = get_data_loaders(dataset_name)
+            model.apply(init_weights)  # Initialize weights
             model = nn.DataParallel(model)
             model = model.to(device)
 
-            output_filename = f"{model_name}_{dataset_name}_evaluation_results.txt"
-            with open(output_filename, "w") as f:
-                # Training Phase (only if not ImageNet pre-trained model)
-                if trainloader and model_name:
-                    f.write(f"\nTraining on dataset: {dataset_name}\n")
-                    print(f"\nTraining on dataset: {dataset_name}")
-                    f.write(f"\nTraining model: {model_name}\n")
-                    print(f"\nTraining model: {model_name}")
+            if trainloader:
+                visualize_data(trainloader)  # Visualize a batch
 
-                    if dataset_name == 'MNIST':
-                        if 'AlexNet' in model_name:
-                            train_model(model, trainloader, device, epochs=300, learning_rate=0.0001)
-                        elif 'ResNet50' in model_name:
-                            train_model(model, trainloader, device, epochs=200, learning_rate=0.00005)
-                    elif dataset_name == 'CIFAR10':
-                        if 'AlexNet' in model_name:
-                            train_model(model, trainloader, device, epochs=1000, learning_rate=0.0001)
-                        elif 'ResNet50' in model_name:
-                            train_model(model, trainloader, device, epochs=500, learning_rate=0.00005)
+                # Warm-up training strategy
+                if '1w1a' in model_name:
+                    print("Starting warm-up training...")
+                    model.weight_bit_width = 4
+                    train_model(model, trainloader, device, epochs=100, learning_rate=0.0001)
+                    model.weight_bit_width = 1
+
+                train_model(model, trainloader, device, epochs=300, learning_rate=0.00005)
 
                 torch.save(model.state_dict(), f"{model_name}_{dataset_name}_trained.pth")
-
-                # Testing Phase
-                f.write(f"\nEvaluating model: {model_name}\n")
-                print(f"\nEvaluating model: {model_name}")
                 metrics = test_model(model, testloader, device)
-                torch.save(model.state_dict(), f"{model_name}_{dataset_name}_evaluated.pth")
 
-                f.write(f"Accuracy: {metrics['accuracy']:.2f}%\n")
-                f.write(f"Loss: {metrics['loss']:.4f}\n")
-                f.write(f"Precision: {metrics['precision']:.4f}\n")
-                f.write(f"Recall: {metrics['recall']:.4f}\n")
-                f.write(f"F1 Score: {metrics['f1_score']:.4f}\n")
-                f.write(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image\n")
-                f.write(f"Throughput: {metrics['throughput']:.2f} images/second\n")
-                f.write(f"FLOPs: {metrics['flops']}\n")
-
-                print(f"Accuracy: {metrics['accuracy']:.2f}%")
-                print(f"Loss: {metrics['loss']:.4f}")
-                print(f"Precision: {metrics['precision']:.4f}")
-                print(f"Recall: {metrics['recall']:.4f}")
-                print(f"F1 Score: {metrics['f1_score']:.4f}")
-                print(f"Average Latency: {metrics['avg_latency']:.6f} seconds/image")
-                print(f"Throughput: {metrics['throughput']:.2f} images/second")
-                print(f"FLOPs: {metrics['flops']}")
+                print(f"Final Accuracy: {metrics['accuracy']:.2f}%")
 
 if __name__ == "__main__":
     main()
