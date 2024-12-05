@@ -12,23 +12,6 @@ from AlexNetQuant import AlexNetQuant
 from ResNetQuant import ResNet50Quant
 
 
-# Custom weight initialization function
-def initialize_weights(model):
-    for m in model.modules():
-        if isinstance(m, nn.Conv2d):
-            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            if m.bias is not None:
-                nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.BatchNorm2d):
-            nn.init.constant_(m.weight, 1)
-            if m.bias is not None:
-                nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.Linear):
-            nn.init.normal_(m.weight, 0, 0.01)
-            if m.bias is not None:
-                nn.init.constant_(m.bias, 0)
-
-
 # Define the datasets and transformations
 def get_data_loaders(dataset_name, batch_size=128, validation_split=0.1):
     if dataset_name == 'MNIST':
@@ -36,7 +19,7 @@ def get_data_loaders(dataset_name, batch_size=128, validation_split=0.1):
             transforms.Grayscale(num_output_channels=3),
             transforms.Resize((32, 32)),
             transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
     elif dataset_name == 'CIFAR10':
         transform = transforms.Compose([
@@ -84,7 +67,7 @@ def get_data_loaders(dataset_name, batch_size=128, validation_split=0.1):
 
 
 # Training function for AlexNet and ResNet-50 models on different datasets
-def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=0.001, warmup_epochs=5):
+def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=0.0001, warmup_epochs=5):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
     # Add a learning rate scheduler with warm-up
@@ -181,9 +164,6 @@ def main():
             model = nn.DataParallel(model)
             model = model.to(device)
 
-            # Initialize model weights
-            initialize_weights(model)
-
             output_filename = f"{model_name}_{dataset_name}_evaluation_results.txt"
             with open(output_filename, "w") as f:
                 # Training Phase (only if not ImageNet pre-trained model)
@@ -194,7 +174,7 @@ def main():
                     print(f"\nTraining model: {model_name}")
 
                     if dataset_name == 'MNIST':
-                        train_model(model, trainloader, valloader, device, epochs=50, learning_rate=0.001)
+                        train_model(model, trainloader, valloader, device, epochs=50, learning_rate=0.0001)
                     elif dataset_name == 'CIFAR10':
                         train_model(model, trainloader, valloader, device, epochs=200, learning_rate=0.01)
 
