@@ -3,7 +3,6 @@ import torchvision
 import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import models
 from sklearn.metrics import classification_report
 import numpy as np
 import time
@@ -13,20 +12,20 @@ from ResNetQuant import ResNet50Quant
 import matplotlib.pyplot as plt
 
 
-# Utility to visualize the data pipeline
+# Visualize data samples
 def visualize_data(trainloader):
     data_iter = iter(trainloader)
     images, labels = next(data_iter)
-    plt.imshow(torchvision.utils.make_grid(images).permute(1, 2, 0))
-    plt.title(f"Labels: {labels.tolist()}")
-    plt.show()
+    print("Sample Labels: ", labels)
+    torchvision.utils.save_image(images, "batch_sample.png")
+    print("Saved a batch of images to 'batch_sample.png' for inspection.")
 
 
-# Weight initialization for the model
+# Initialize model weights
 def init_weights(m):
     if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
         nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-    if isinstance(m, nn.BatchNorm2d):
+    elif isinstance(m, nn.BatchNorm2d):
         nn.init.constant_(m.weight, 1)
         nn.init.constant_(m.bias, 0)
 
@@ -43,6 +42,8 @@ def get_data_loaders(dataset_name, batch_size=64):
     elif dataset_name == 'CIFAR10':
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(10),
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261))
         ])
@@ -71,31 +72,28 @@ def get_data_loaders(dataset_name, batch_size=64):
     return trainloader, testloader
 
 
-# Training function for AlexNet and ResNet-50 models on different datasets
+# Train the model
 def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.1)
 
     model.train()
-
     for epoch in range(epochs):
         running_loss = 0.0
         correct = 0
         total = 0
 
-        for i, (inputs, labels) in enumerate(trainloader, 0):
+        for batch_idx, (inputs, labels) in enumerate(trainloader):
             inputs, labels = inputs.to(device), labels.to(device)
 
             optimizer.zero_grad()
-
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
 
             # Gradient clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-
             optimizer.step()
 
             running_loss += loss.item()
@@ -103,19 +101,19 @@ def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-            # Log batch loss and gradients
-            print(f"Batch {i + 1}, Loss: {loss.item():.4f}")
+            # Log batch-wise loss
+            print(f"Batch {batch_idx + 1}/{len(trainloader)}, Loss: {loss.item():.4f}")
 
         scheduler.step()
 
-        # Print epoch stats
+        # Epoch stats
         print(
             f"Epoch {epoch + 1}/{epochs}, Loss: {running_loss / len(trainloader):.4f}, "
             f"Accuracy: {100 * correct / total:.2f}%"
         )
 
 
-# Main script for training and testing
+# Main function
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if torch.cuda.device_count() > 1:
@@ -130,26 +128,24 @@ def main():
     for dataset_name in datasets:
         for model_name, model in models_to_test.items():
             trainloader, testloader = get_data_loaders(dataset_name)
-            model.apply(init_weights)  # Initialize weights
-            model = nn.DataParallel(model)
-            model = model.to(device)
+            visualize_data(trainloader)  # Check data pipeline
+            model.apply(init_weights)  # Apply weight initialization
+            model = nn.DataParallel(model).to(device)
 
-            if trainloader:
-                visualize_data(trainloader)  # Visualize a batch
+            # Warm-up training for quantized models
+            if '1w1a' in model_name:
+                print("Starting warm-up training with 4w4a...")
+                model.module.weight_bit_width = 4
+                train_model(model, trainloader, device, epochs=50, learning_rate=0.001)
+                model.module.weight_bit_width = 1
 
-                # Warm-up training strategy
-                if '1w1a' in model_name:
-                    print("Starting warm-up training...")
-                    model.weight_bit_width = 4
-                    train_model(model, trainloader, device, epochs=100, learning_rate=0.0001)
-                    model.weight_bit_width = 1
+            # Train final model
+            train_model(model, trainloader, device, epochs=300, learning_rate=0.0001)
+            torch.save(model.state_dict(), f"{model_name}_{dataset_name}_trained.pth")
 
-                train_model(model, trainloader, device, epochs=300, learning_rate=0.00005)
-
-                torch.save(model.state_dict(), f"{model_name}_{dataset_name}_trained.pth")
-                metrics = test_model(model, testloader, device)
-
-                print(f"Final Accuracy: {metrics['accuracy']:.2f}%")
+            # Evaluate model
+            metrics = test_model(model, testloader, device)
+            print(f"Final Accuracy: {metrics['accuracy']:.2f}%")
 
 if __name__ == "__main__":
     main()
