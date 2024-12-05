@@ -111,6 +111,9 @@ def test_model(model, testloader, device):
 def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    # Add a learning rate scheduler
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.1)
+
     model.train()
 
     for epoch in range(epochs):
@@ -130,16 +133,23 @@ def train_model(model, trainloader, device, epochs=10, learning_rate=0.001):
             loss.backward()
             optimizer.step()
 
-            # Print statistics
+            # Calculate statistics
             running_loss += loss.item()
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
+        # Step the scheduler at the end of the epoch
+        scheduler.step()
+
+        # Print epoch stats
         print(
-            f"Epoch {epoch + 1}/{epochs}, Loss: {running_loss / len(trainloader):.4f}, Accuracy: {100 * correct / total:.2f}%")
+            f"Epoch {epoch + 1}/{epochs}, Loss: {running_loss / len(trainloader):.4f}, "
+            f"Accuracy: {100 * correct / total:.2f}%"
+        )
 
     print('Finished Training')
+
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -176,10 +186,17 @@ def main():
                     f.write(f"\nTraining model: {model_name}\n")
                     print(f"\nTraining model: {model_name}")
 
-                    if 'AlexNet' in model_name:
-                        train_model(model, trainloader, device, epochs=1000, learning_rate=0.000001)
-                    elif 'ResNet50' in model_name:
-                        train_model(model, trainloader, device, epochs=500, learning_rate=0.00001)
+                    if dataset_name == 'MNIST':
+                        if 'AlexNet' in model_name:
+                            train_model(model, trainloader, device, epochs=300, learning_rate=0.0001)
+                        elif 'ResNet50' in model_name:
+                            train_model(model, trainloader, device, epochs=200, learning_rate=0.00005)
+                    elif dataset_name == 'CIFAR10':
+                        if 'AlexNet' in model_name:
+                            train_model(model, trainloader, device, epochs=1000, learning_rate=0.0001)
+                        elif 'ResNet50' in model_name:
+                            train_model(model, trainloader, device, epochs=500, learning_rate=0.00005)
+
                 torch.save(model.state_dict(), f"{model_name}_{dataset_name}_trained.pth")
 
                 # Testing Phase
