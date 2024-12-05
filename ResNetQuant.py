@@ -70,7 +70,7 @@ class ResNet50Quant(nn.Module):
                                        act_bit_width=act_bit_width)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = QuantLinear(512 * 4, num_classes, weight_quant=weight_quant, bit_width=weight_bit_width)
+        self.fc = QuantLinear(512 * 4, num_classes, weight_quant=weight_quant, bit_width=weight_bit_width, bias=False)
 
     def _make_layer(self, block, planes, num_blocks, stride, weight_bit_width, act_bit_width):
         layers = []
