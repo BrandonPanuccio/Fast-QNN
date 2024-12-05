@@ -15,12 +15,12 @@ class AlexNetQuant(nn.Module):
             QuantConv2d(3, 64, kernel_size=11, stride=4, padding=2, weight_quant=weight_quant,
                         bit_width=weight_bit_width, bias=False),
             QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
-            QuantMaxPool2d(kernel_size=3, stride=2),
+            QuantMaxPool2d(kernel_size=3, stride=2, padding=1),
 
             QuantConv2d(64, 192, kernel_size=5, padding=2, weight_quant=weight_quant, bit_width=weight_bit_width,
                         bias=False),
             QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
-            QuantMaxPool2d(kernel_size=3, stride=2),
+            QuantMaxPool2d(kernel_size=3, stride=2, padding=1),
 
             QuantConv2d(192, 384, kernel_size=3, padding=1, weight_quant=weight_quant, bit_width=weight_bit_width,
                         bias=False),
@@ -33,11 +33,11 @@ class AlexNetQuant(nn.Module):
             QuantConv2d(256, 256, kernel_size=3, padding=1, weight_quant=weight_quant, bit_width=weight_bit_width,
                         bias=False),
             QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
-            QuantMaxPool2d(kernel_size=3, stride=2)
+            QuantMaxPool2d(kernel_size=3, stride=2, padding=1)
         )
 
         self.classifier = nn.Sequential(
-            QuantLinear(256 * 6 * 6, 4096, weight_quant=weight_quant, bit_width=weight_bit_width, bias=False),
+            QuantLinear(256 * 4 * 4, 4096, weight_quant=weight_quant, bit_width=weight_bit_width, bias=False),
             QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
 
             QuantLinear(4096, 4096, weight_quant=weight_quant, bit_width=weight_bit_width, bias=False),
@@ -48,7 +48,6 @@ class AlexNetQuant(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(x.size(0), 256 * 6 * 6)
+        x = x.view(x.size(0), -1)
         x = self.classifier(x)
         return x
-
