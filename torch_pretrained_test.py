@@ -67,11 +67,11 @@ def get_data_loaders(dataset_name, batch_size=64, validation_split=0.1):
 
 
 # Training function for AlexNet and ResNet-50 models on different datasets
-def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=0.001):
+def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=0.01):
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
     # Add a learning rate scheduler
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, verbose=True)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
     model.train()
 
@@ -103,8 +103,7 @@ def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=
             correct += (predicted == labels).sum().item()
 
         # Step the scheduler at the end of the epoch
-        val_loss = evaluate_model(model, valloader, device)['loss'] if valloader else running_loss / len(trainloader)
-        scheduler.step(val_loss)
+        scheduler.step()
 
         # Print epoch stats
         print(
@@ -173,9 +172,9 @@ def main():
                     print(f"\nTraining model: {model_name}")
 
                     if dataset_name == 'MNIST':
-                        train_model(model, trainloader, valloader, device, epochs=50, learning_rate=0.001)
+                        train_model(model, trainloader, valloader, device, epochs=50, learning_rate=0.01)
                     elif dataset_name == 'CIFAR10':
-                        train_model(model, trainloader, valloader, device, epochs=200, learning_rate=0.001)
+                        train_model(model, trainloader, valloader, device, epochs=200, learning_rate=0.01)
 
                 torch.save(model.state_dict(), f"{model_name}_{dataset_name}_trained.pth")
 
