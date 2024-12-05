@@ -8,7 +8,7 @@ from sklearn.metrics import classification_report
 import numpy as np
 import time
 from torch.profiler import profile, record_function, ProfilerActivity
-from AlexNetQuant import AlexNetQuant
+from AlexNetQuant import AlexNetQuant, adjust_model_for_small_input
 from ResNetQuant import ResNet50Quant
 
 
@@ -174,6 +174,7 @@ def main():
                     print(f"\nTraining model: {model_name}")
 
                     if dataset_name == 'MNIST':
+                        adjust_model_for_small_input(model, input_size=(128, 128))
                         train_model(model, trainloader, valloader, device, epochs=50, learning_rate=0.0001)
                     elif dataset_name == 'CIFAR10':
                         train_model(model, trainloader, valloader, device, epochs=200, learning_rate=0.01)
