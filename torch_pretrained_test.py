@@ -17,7 +17,7 @@ def initialize_weights(model):
     for m in model.modules():
         if isinstance(m, nn.Conv2d):
             nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            if hasattr(m, 'bias') and m.bias is not None:
+            if m.bias is not None and isinstance(m.bias, torch.Tensor):
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.BatchNorm2d):
             nn.init.constant_(m.weight, 1)
