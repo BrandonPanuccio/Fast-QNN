@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card p-4 shadow">
+    <h1>Board and Model Configuration</h1>
+    <form action="{{ url_for('step1') }}" method="POST" enctype="multipart/form-data">
+        <!-- Input 1: Target Board Dropdown -->
+        <div class="form-group">
+            <label for="target_board">Please choose your target board:</label>
+            <select name="target_board" id="target_board" class="form-control" onchange="resetOptions(); showOptions()">
+                <option value="other" selected>Other</option>  <!-- Set 'Other' as default -->
+                <option value="pynq_z2">Pynq Z2</option>
+                <option value="pynq_zu">Pynq ZU</option>
+            </select>
+        </div>
+
+        <!-- Input 2: Pre-trained or Untrained Model -->
+        <div id="modelOptions" class="form-group" style="display: none;">
+            <label for="model_type">Are you inputting a pre-trained model or untrained model?</label><br>
+            <input type="radio" name="model_type" value="pretrained" onclick="showModelOptions()"> Pre-trained Model<br>
+            <input type="radio" name="model_type" value="untrained" onclick="showModelOptions()"> Untrained Model
+        </div>
+
+        <button type="submit" class="btn btn-primary">Next</button>
+    </form>
+</div>
+
+<script>
+    // Reset all options to be hidden
+    function resetOptions() {
+        document.getElementById('modelOptions').style.display = 'none';
+    }
+
+    // Show options based on selected target board
+    function showOptions() {
+        var board = document.getElementById('target_board').value;
+        if (board === 'other') {
+            alert('We do not support other boards at the moment.');
+        } else {
+            document.getElementById('modelOptions').style.display = 'block';
+        }
+    }
+
+    // Show model options and redirect based on pre-trained/untrained model
+    function showModelOptions() {
+        var modelType = document.querySelector('input[name="model_type"]:checked').value; // Get selected radio button value
+
+        if (modelType === 'pretrained') {
+            window.location.href = "{{ url_for('step3') }}";  // Redirect to step 3 for pre-trained model
+        } else if (modelType === 'untrained') {
+            window.location.href = "{{ url_for('step2') }}";  // Redirect to step 2 for untrained model
+        }
+    }
+</script>
+{% endblock %}
+

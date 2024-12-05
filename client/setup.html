@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast QNN - Setup Page</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body class="bg-dark text-white">
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Fast QNN - Setup Page</h1>
+
+    <!-- Project Setup Section -->
+    <div class="card bg-secondary text-white mb-4">
+        <div class="card-header">Project Setup</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="projectName">Project Name</label>
+                <input type="text" id="projectName" name="prj_name" class="form-control" placeholder="Enter project name">
+                <div id="projectName_error" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Configuration Section -->
+    <div class="card bg-secondary text-white mb-4">
+        <div class="card-header">Model Configuration</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="modelType">Model Type</label>
+                <select id="modelType" name="model_type" class="form-control">
+                    <option value="">-- Select Model Type --</option>
+                    <option value="untrained">Untrained</option>
+                    <option value="custom_pretrained">Custom Pretrained</option>
+                    <option value="torch_vision_pretrained">TorchVision Pretrained</option>
+                </select>
+                <div id="modelType_error" class="error-message"></div>
+            </div>
+            <div class="form-group" id="model_py_file_group" style="display: none;">
+                <label for="model_py_file">Select Model Python File (.py)</label>
+                <input type="file" id="model_py_file" name="model_py_file" class="form-control">
+                <div id="model_py_file_error" class="error-message"></div>
+            </div>
+            <div class="form-group" id="model_pth_file_group" style="display: none;">
+                <label for="model_pth_file">Select Model Weights File (.pth)</label>
+                <input type="file" id="model_pth_file" name="model_pth_file" class="form-control">
+                <div id="model_pth_file_error" class="error-message"></div>
+            </div>
+            <div class="form-group" id="torch_vision_model_group" style="display: none;">
+                <label for="torch_vision_model">TorchVision Model Name</label>
+                <input type="text" id="torch_vision_model" name="torch_vision_model" class="form-control" placeholder="Enter TorchVision model name" list="torchvisionModelList">
+                <datalist id="torchvisionModelList"></datalist>
+                <div id="torch_vision_model_error" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dataset Configuration Section -->
+    <div class="card bg-secondary text-white mb-4">
+        <div class="card-header">Dataset Configuration</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="datasetType">Dataset Type</label>
+                <select id="datasetType" name="dataset_type" class="form-control">
+                    <option value="">-- Select Dataset Type --</option>
+                    <option value="torch_vision_dataset">TorchVision Dataset</option>
+                    <option value="custom_dataset">Custom Dataset</option>
+                </select>
+                <div id="datasetType_error" class="error-message"></div>
+            </div>
+            <div class="form-group" id="custom_dataset_group" style="display: none;">
+                <label for="custom_dataset">Select Custom Dataset Archive (.zip or .tar)</label>
+                <input type="file" id="custom_dataset" name="custom_dataset" class="form-control">
+                <div id="custom_dataset_error" class="error-message"></div>
+            </div>
+            <div class="form-group" id="torch_vision_dataset_group" style="display: none;">
+                <label for="torch_vision_dataset">TorchVision Dataset Name</label>
+                <input type="text" id="torch_vision_dataset" name="torch_vision_dataset" class="form-control" placeholder="Enter TorchVision dataset name" list="torchvisionDatasetList">
+                <datalist id="torchvisionDatasetList"></datalist>
+                <div id="torch_vision_dataset_error" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Configuration Button -->
+    <div class="text-center">
+        <button id="submitButton" class="btn btn-success">Deploy Onto Board</button>
+    </div>
+</div>
+
+<script src="static/js/app.js"></script>
+</body>
+</html>
+
+
+
+

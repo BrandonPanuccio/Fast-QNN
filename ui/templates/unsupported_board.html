@@ -1,0 +1,8 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="alert alert-warning">
+    <h2>We do not support other boards at the moment. Please choose a different board.</h2>
+    <a href="{{ url_for('step1') }}" class="btn btn-secondary">Go Back</a>
+</div>
+{% endblock %}
