@@ -177,9 +177,9 @@ def main():
                     print(f"\nTraining model: {model_name}")
 
                     if model_name == 'AlexNet':
-                        train_model(model, trainloader, device, epochs=30, learning_rate=0.0001)
+                        train_model(model, trainloader, device, epochs=300, learning_rate=0.00001)
                     elif model_name == 'ResNet50':
-                        train_model(model, trainloader, device, epochs=15, learning_rate=0.001)
+                        train_model(model, trainloader, device, epochs=150, learning_rate=0.0001)
                 torch.save(model.state_dict(), f"{model_name}_{dataset_name}_trained.pth")
 
                 # Testing Phase
