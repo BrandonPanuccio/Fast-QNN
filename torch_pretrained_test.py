@@ -37,8 +37,10 @@ def get_data_loaders(dataset_name, batch_size=64, validation_split=0.1):
 
     if dataset_name == 'MNIST':
         dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+        testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
     elif dataset_name == 'CIFAR10':
         dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+        testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
     elif dataset_name == 'ImageNet':
         trainset = None
         testset = torchvision.datasets.ImageNet(root='./data', split='val', download=True, transform=transform)
