@@ -42,13 +42,13 @@ def get_data_loaders(dataset_name, batch_size=64, validation_split=0.1):
         dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
         testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
     elif dataset_name == 'ImageNet':
-        trainset = None
+        dataset = torchvision.datasets.ImageNet(root='./data', split='train', download=True, transform=transform)
         testset = torchvision.datasets.ImageNet(root='./data', split='val', download=True, transform=transform)
     else:
         raise ValueError("Invalid dataset name. Choose from 'MNIST', 'CIFAR10', 'ImageNet'")
 
     # Split dataset into training and validation
-    if dataset_name in ['MNIST', 'CIFAR10']:
+    if dataset_name in ['MNIST', 'CIFAR10', 'ImageNet']:
         train_size = int((1 - validation_split) * len(dataset))
         val_size = len(dataset) - train_size
         trainset, valset = torch.utils.data.random_split(dataset, [train_size, val_size])
