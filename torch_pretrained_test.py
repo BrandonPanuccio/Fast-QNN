@@ -17,14 +17,16 @@ def initialize_weights(model):
     for m in model.modules():
         if isinstance(m, nn.Conv2d):
             nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            if hasattr(m, 'bias') and m.bias is not None:
+            if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.BatchNorm2d):
             nn.init.constant_(m.weight, 1)
-            nn.init.constant_(m.bias, 0)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.Linear):
             nn.init.normal_(m.weight, 0, 0.01)
-            nn.init.constant_(m.bias, 0)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
 
 
 # Define the datasets and transformations
@@ -82,9 +84,9 @@ def get_data_loaders(dataset_name, batch_size=128, validation_split=0.1):
 
 
 # Training function for AlexNet and ResNet-50 models on different datasets
-def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=0.001, warmup_epochs=5):
+def train_model(model, trainloader, valloader, device, epochs=10, learning_rate=0.01, warmup_epochs=5):
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
     # Add a learning rate scheduler with warm-up
     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=learning_rate * 10,
                                                     steps_per_epoch=len(trainloader), epochs=epochs,
@@ -192,9 +194,9 @@ def main():
                     print(f"\nTraining model: {model_name}")
 
                     if dataset_name == 'MNIST':
-                        train_model(model, trainloader, valloader, device, epochs=50, learning_rate=0.001)
+                        train_model(model, trainloader, valloader, device, epochs=50, learning_rate=0.01)
                     elif dataset_name == 'CIFAR10':
-                        train_model(model, trainloader, valloader, device, epochs=200, learning_rate=0.001)
+                        train_model(model, trainloader, valloader, device, epochs=200, learning_rate=0.01)
 
                 torch.save(model.state_dict(), f"{model_name}_{dataset_name}_trained.pth")
 
