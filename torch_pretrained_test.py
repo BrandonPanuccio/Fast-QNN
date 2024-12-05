@@ -17,7 +17,7 @@ def get_data_loaders(dataset_name, batch_size=128, validation_split=0.1):
     if dataset_name == 'MNIST':
         transform = transforms.Compose([
             transforms.Grayscale(num_output_channels=3),
-            transforms.Resize((64, 64)),
+            transforms.Resize((128, 128)),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
