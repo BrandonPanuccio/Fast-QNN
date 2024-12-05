@@ -11,6 +11,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 from AlexNetQuant import AlexNetQuant
 from ResNetQuant import ResNet50Quant
 
+
 # Define the datasets and transformations
 def get_data_loaders(dataset_name, batch_size=64, validation_split=0.1):
     if dataset_name == 'MNIST':
@@ -34,6 +35,8 @@ def get_data_loaders(dataset_name, batch_size=64, validation_split=0.1):
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
         ])
+    else:
+        raise ValueError("Invalid dataset name. Choose from 'MNIST', 'CIFAR10', 'ImageNet'")
 
     if dataset_name == 'MNIST':
         dataset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
@@ -44,19 +47,18 @@ def get_data_loaders(dataset_name, batch_size=64, validation_split=0.1):
     elif dataset_name == 'ImageNet':
         dataset = torchvision.datasets.ImageNet(root='./data', split='train', download=True, transform=transform)
         testset = torchvision.datasets.ImageNet(root='./data', split='val', download=True, transform=transform)
-    else:
-        raise ValueError("Invalid dataset name. Choose from 'MNIST', 'CIFAR10', 'ImageNet'")
 
     # Split dataset into training and validation
-    if dataset_name in ['MNIST', 'CIFAR10', 'ImageNet']:
+    trainloader, valloader = None, None
+    if dataset_name in ['MNIST', 'CIFAR10']:
         train_size = int((1 - validation_split) * len(dataset))
         val_size = len(dataset) - train_size
         trainset, valset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=4)
         valloader = torch.utils.data.DataLoader(valset, batch_size=batch_size, shuffle=False, num_workers=4)
-    else:
-        trainloader = None
+    elif dataset_name == 'ImageNet':
+        trainloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
         valloader = None
 
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=4)
