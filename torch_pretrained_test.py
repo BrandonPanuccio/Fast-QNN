@@ -167,7 +167,7 @@ def main():
                     if isinstance(layer, nn.MaxPool2d):
                         layer.kernel_size = (2, 2)
                         layer.stride = (2, 2)
-                        layer.padding = (1, 1)
+                        layer.padding = (0, 0)
             model = nn.DataParallel(model)
             model = model.to(device)
 
