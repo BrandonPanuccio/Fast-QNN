@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fast QNN - Setup Page</title>
-    <link rel="stylesheet" href="static/css/styles.css">
+    <link rel="stylesheet" href="../static/css/styles.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body class="bg-dark text-white">
@@ -20,6 +20,14 @@
                 <input type="text" id="projectName" name="prj_name" class="form-control" placeholder="Enter project name">
                 <div id="projectName_error" class="error-message"></div>
             </div>
+            <div class="form-group">
+                <label for="boardName">Board Name</label>
+                <select id="boardName" name="brd_name" class="form-control">
+                    <option value="">-- Select Board Name --</option>
+                    <option value="Pynq-ZU">Pynq ZU</option>
+                </select>
+                <div id="boardName_error" class="error-message"></div>
+            </div>
         </div>
     </div>
 
@@ -32,8 +40,10 @@
                 <select id="modelType" name="model_type" class="form-control">
                     <option value="">-- Select Model Type --</option>
                     <option value="untrained">Untrained</option>
+                    <option value="sample_untrained">Sample Untrained</option>
                     <option value="custom_pretrained">Custom Pretrained</option>
-                    <option value="torch_vision_pretrained">TorchVision Pretrained</option>
+                    <option value="sample_pretrained">Sample Pretrained</option>
+                    <option value="finn_pretrained">FINN Pretrained</option>
                 </select>
                 <div id="modelType_error" class="error-message"></div>
             </div>
@@ -47,17 +57,32 @@
                 <input type="file" id="model_pth_file" name="model_pth_file" class="form-control">
                 <div id="model_pth_file_error" class="error-message"></div>
             </div>
-            <div class="form-group" id="torch_vision_model_group" style="display: none;">
-                <label for="torch_vision_model">TorchVision Model Name</label>
-                <input type="text" id="torch_vision_model" name="torch_vision_model" class="form-control" placeholder="Enter TorchVision model name" list="torchvisionModelList">
-                <datalist id="torchvisionModelList"></datalist>
-                <div id="torch_vision_model_error" class="error-message"></div>
+            <div class="form-group" id="sample_pretrained_model_group" style="display: none;">
+                <label for="sample_pretrained_model">Sample Pretrained Model Name</label>
+                <select id="sample_pretrained_model" name="sample_pretrained_model" class="form-control">
+                    <option value="">-- Select Sample Pretrained Model --</option>
+                </select>
+                <div id="sample_pretrained_model_error" class="error-message"></div>
+            </div>
+            <div class="form-group" id="sample_untrained_model_group" style="display: none;">
+                <label for="sample_untrained_model">Sample Untrained Model Name</label>
+                <select id="sample_untrained_model" name="sample_untrained_model" class="form-control">
+                    <option value="">-- Select Sample Untrained Model --</option>
+                </select>
+                <div id="sample_untrained_model_error" class="error-message"></div>
+            </div>
+            <div class="form-group" id="finn_pretrained_model_group" style="display: none;">
+                <label for="finn_pretrained_model">FINN Pretrained Model Name</label>
+                <select id="finn_pretrained_model" name="finn_pretrained_model" class="form-control">
+                    <option value="">-- Select FINN Pretrained Model --</option>
+                </select>
+                <div id="finn_pretrained_model_error" class="error-message"></div>
             </div>
         </div>
     </div>
 
     <!-- Dataset Configuration Section -->
-    <div class="card bg-secondary text-white mb-4">
+    <div class="card bg-secondary text-white mb-4" id="dataset_configuration_section" style="display: none;">
         <div class="card-header">Dataset Configuration</div>
         <div class="card-body">
             <div class="form-group">
@@ -76,8 +101,9 @@
             </div>
             <div class="form-group" id="torch_vision_dataset_group" style="display: none;">
                 <label for="torch_vision_dataset">TorchVision Dataset Name</label>
-                <input type="text" id="torch_vision_dataset" name="torch_vision_dataset" class="form-control" placeholder="Enter TorchVision dataset name" list="torchvisionDatasetList">
-                <datalist id="torchvisionDatasetList"></datalist>
+                <select id="torch_vision_dataset" name="torch_vision_dataset" class="form-control">
+                    <option value="">-- Select TorchVision Dataset --</option>
+                </select>
                 <div id="torch_vision_dataset_error" class="error-message"></div>
             </div>
         </div>
@@ -85,14 +111,10 @@
 
     <!-- Submit Configuration Button -->
     <div class="text-center">
-        <button id="submitButton" class="btn btn-success">Deploy Onto Board</button>
+        <button id="submitButton" class="btn btn-success">Start Setup</button>
     </div>
 </div>
 
-<script src="static/js/app.js"></script>
+<script src="../static/js/app.js"></script>
 </body>
 </html>
-
-
-
-

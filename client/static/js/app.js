@@ -1,5 +1,5 @@
-const API_BASE = "http://127.0.0.1:5000"; // API base URL
-//const API_BASE = `http://${window.location.hostname}:5000`; // Dynamically determine API base
+// API base URL
+const API_BASE = "http://127.0.0.1:8999"; // Update as needed
 
 /**
  * Validate file input for allowed extensions.
@@ -39,33 +39,91 @@ function clearErrors() {
     document.querySelectorAll(".form-control").forEach((el) => el.classList.remove("error-border"));
 }
 
-
 /**
- * Populate a datalist element with options.
- * @param {string} datalistId - ID of the datalist element.
- * @param {string[]} options - List of options to populate.
+ * Populate select options dynamically
+ * @param {string} selectId - The ID of the select element
+ * @param {Array} options - Array of options to populate
  */
-function populateDatalist(datalistId, options) {
-    const datalist = document.getElementById(datalistId);
-    datalist.innerHTML = ""; // Clear existing options
-    options.forEach((option) => {
-        const optionElement = document.createElement("option");
-        optionElement.value = option;
-        datalist.appendChild(optionElement);
-    });
+function populateSelect(selectId, options) {
+    const select = document.getElementById(selectId);
+    select.innerHTML = "<option value=''>-- Select Option --</option>"; // Clear existing options and add a default
+
+    // Ensure options is an array before iterating
+    if (Array.isArray(options)) {
+        options.forEach(option => {
+            const opt = document.createElement("option");
+            opt.value = option;
+            opt.textContent = option;
+            select.appendChild(opt);
+        });
+    } else {
+        console.error(`Expected an array for options, but received:`, options);
+    }
 }
 
 /**
- * Toggle file input fields based on model type selection.
+ * Fetch TorchVision models, datasets, and boards for autocomplete and dynamic population.
  */
+async function fetchConfigurationData() {
+    try {
+        // Fetch sample pretrained models
+        const samplePretrainedModelsResponse = await fetch(`${API_BASE}/autocomplete/sample_pretrained_models`);
+        if (samplePretrainedModelsResponse.ok) {
+            const samplePretrainedModelsData = await samplePretrainedModelsResponse.json();
+            populateSelect("sample_pretrained_model", samplePretrainedModelsData.sample_pretrained_models);
+        }
+
+        // Fetch sample untrained models
+        const sampleUntrainedModelsResponse = await fetch(`${API_BASE}/autocomplete/sample_untrained_models`);
+        if (sampleUntrainedModelsResponse.ok) {
+            const sampleUntrainedModelsData = await sampleUntrainedModelsResponse.json();
+            populateSelect("sample_untrained_model", sampleUntrainedModelsData.sample_untrained_models);
+        }
+
+        // Fetch FINN pretrained models
+        const finnPretrainedModelsResponse = await fetch(`${API_BASE}/autocomplete/finn_pretrained_models`);
+        if (finnPretrainedModelsResponse.ok) {
+            const finnPretrainedModelsData = await finnPretrainedModelsResponse.json();
+            populateSelect("finn_pretrained_model", finnPretrainedModelsData.finn_pretrained_models);
+        }
+
+        // Fetch TorchVision datasets
+        const datasetsResponse = await fetch(`${API_BASE}/autocomplete/datasets`);
+        if (datasetsResponse.ok) {
+            const datasetsData = await datasetsResponse.json();
+            populateSelect("torch_vision_dataset", datasetsData.datasets);
+        }
+
+        // Fetch available boards
+        const boardsResponse = await fetch(`${API_BASE}/autocomplete/boards`);
+        if (boardsResponse.ok) {
+            const boardsData = await boardsResponse.json();
+            populateSelect("boardName", boardsData.boards);
+        }
+
+    } catch (error) {
+        console.error("Error fetching configuration data:", error);
+    }
+}
+
 function toggleModelFields() {
     const modelType = document.getElementById("modelType").value;
+
+    // Show/hide model configuration inputs based on selected model type
     document.getElementById("model_py_file_group").style.display =
         modelType === "untrained" || modelType === "custom_pretrained" ? "block" : "none";
     document.getElementById("model_pth_file_group").style.display =
         modelType === "custom_pretrained" ? "block" : "none";
-    document.getElementById("torch_vision_model_group").style.display =
-        modelType === "torch_vision_pretrained" ? "block" : "none";
+    document.getElementById("sample_pretrained_model_group").style.display =
+        modelType === "sample_pretrained" ? "block" : "none";
+    document.getElementById("sample_untrained_model_group").style.display =
+        modelType === "sample_untrained" ? "block" : "none";
+    document.getElementById("finn_pretrained_model_group").style.display =
+        modelType === "finn_pretrained" ? "block" : "none";
+
+    // Show/hide dataset configuration section
+    document.getElementById("dataset_configuration_section").style.display =
+        modelType === "untrained" || modelType === "sample_untrained" ? "block" : "none";
 }
 
 /**
@@ -77,29 +135,6 @@ function toggleDatasetFields() {
         datasetType === "custom_dataset" ? "block" : "none";
     document.getElementById("torch_vision_dataset_group").style.display =
         datasetType === "torch_vision_dataset" ? "block" : "none";
-}
-
-/**
- * Fetch TorchVision models and datasets for autocomplete.
- */
-async function fetchTorchVisionData() {
-    try {
-        // Fetch TorchVision models
-        const modelsResponse = await fetch(`${API_BASE}/autocomplete/models`);
-        if (modelsResponse.ok) {
-            const modelsData = await modelsResponse.json();
-            populateDatalist("torchvisionModelList", modelsData);
-        }
-
-        // Fetch TorchVision datasets
-        const datasetsResponse = await fetch(`${API_BASE}/autocomplete/datasets`);
-        if (datasetsResponse.ok) {
-            const datasetsData = await datasetsResponse.json();
-            populateDatalist("torchvisionDatasetList", datasetsData);
-        }
-    } catch (error) {
-        console.error("Error fetching TorchVision data:", error);
-    }
 }
 
 /**
@@ -117,6 +152,12 @@ function validateInputs() {
         isValid = false;
     }
 
+    // Validate board name
+    const boardName = document.getElementById("boardName").value;
+    if (!boardName) {
+        setError("boardName", "Board name is required.");
+        isValid = false;
+    }
 
     // Validate model type
     const modelType = document.getElementById("modelType").value;
@@ -139,30 +180,44 @@ function validateInputs() {
         isValid = false;
     }
 
-    // Validate TorchVision model name if required
-    const torchVisionModel = document.getElementById("torch_vision_model").value.trim();
-    if (modelType === "torch_vision_pretrained" && !torchVisionModel) {
-        setError("torch_vision_model", "TorchVision model name is required.");
+    // Validate sample pretrained model if required
+    const samplePretrainedModel = document.getElementById("sample_pretrained_model").value;
+    if (modelType === "sample_pretrained" && !samplePretrainedModel) {
+        setError("sample_pretrained_model", "Sample pretrained model is required.");
+        isValid = false;
+    }
+
+    // Validate sample untrained model if required
+    const sampleUntrainedModel = document.getElementById("sample_untrained_model").value;
+    if (modelType === "sample_untrained" && !sampleUntrainedModel) {
+        setError("sample_untrained_model", "Sample untrained model is required.");
+        isValid = false;
+    }
+
+    // Validate FINN pretrained model if required
+    const finnPretrainedModel = document.getElementById("finn_pretrained_model").value;
+    if (modelType === "finn_pretrained" && !finnPretrainedModel) {
+        setError("finn_pretrained_model", "FINN pretrained model is required.");
         isValid = false;
     }
 
     // Validate dataset type
     const datasetType = document.getElementById("datasetType").value;
-    if (!datasetType) {
+    if (!datasetType && (modelType === "sample_untrained" || modelType === "untrained")) {
         setError("datasetType", "Dataset type is required.");
         isValid = false;
     }
 
     // Validate TorchVision dataset name if required
     const torchVisionDataset = document.getElementById("torch_vision_dataset").value.trim();
-    if (datasetType === "torch_vision_dataset" && !torchVisionDataset) {
+    if (datasetType === "torch_vision_dataset" && !torchVisionDataset && (modelType !== "sample_untrained" || modelType !== "untrained")) {
         setError("torch_vision_dataset", "TorchVision dataset name is required.");
         isValid = false;
     }
 
     // Validate custom dataset file if required
     const customDataset = document.getElementById("custom_dataset");
-    if (datasetType === "custom_dataset" && !validateFileType(customDataset, ["zip", "tar"])) {
+    if (datasetType === "custom_dataset" && !validateFileType(customDataset, ["zip", "tar"]) && (modelType === "sample_untrained" || modelType === "untrained")) {
         setError("custom_dataset", "Custom dataset archive (.zip or .tar) is required.");
         isValid = false;
     }
@@ -180,31 +235,42 @@ async function submitConfiguration(event) {
 
     const formData = new FormData();
     formData.append("prj_name", document.getElementById("projectName").value.trim());
+    formData.append("brd_name", document.getElementById("boardName").value);
     formData.append("model_type", document.getElementById("modelType").value);
     formData.append("dataset_type", document.getElementById("datasetType").value);
 
+    // Append relevant files if provided
     const modelPyFile = document.getElementById("model_py_file").files[0];
-    const modelPthFile = document.getElementById("model_pth_file").files[0];
-    const customDataset = document.getElementById("custom_dataset").files[0];
-
     if (modelPyFile) formData.append("model_py_file", modelPyFile);
+
+    const modelPthFile = document.getElementById("model_pth_file").files[0];
     if (modelPthFile) formData.append("model_pth_file", modelPthFile);
+
+    const customDataset = document.getElementById("custom_dataset").files[0];
     if (customDataset) formData.append("custom_dataset", customDataset);
 
-    // Append TorchVision fields
+    // Append additional inputs based on model and dataset types
     const modelType = document.getElementById("modelType").value;
     const datasetType = document.getElementById("datasetType").value;
 
-
-    if (modelType === "torch_vision_pretrained") {
-        const torchVisionModel = document.getElementById("torch_vision_model").value.trim();
-        formData.append("torch_vision_model", torchVisionModel);
-        localStorage.setItem("torch_vision_model", document.getElementById("torch_vision_model").value.trim());
+    if (modelType === "sample_pretrained") {
+        const samplePretrainedModel = document.getElementById("sample_pretrained_model").value;
+        formData.append("sample_pretrained_model", samplePretrainedModel);
     }
+
+    if (modelType === "sample_untrained") {
+        const sampleUntrainedModel = document.getElementById("sample_untrained_model").value;
+        formData.append("sample_untrained_model", sampleUntrainedModel);
+    }
+
+    if (modelType === "finn_pretrained") {
+        const finnPretrainedModel = document.getElementById("finn_pretrained_model").value;
+        formData.append("finn_pretrained_model", finnPretrainedModel);
+    }
+
     if (datasetType === "torch_vision_dataset") {
         const torchVisionDataset = document.getElementById("torch_vision_dataset").value.trim();
         formData.append("torch_vision_dataset", torchVisionDataset);
-        localStorage.setItem("torch_vision_dataset", document.getElementById("torch_vision_dataset").value.trim());
     }
 
     try {
@@ -218,16 +284,9 @@ async function submitConfiguration(event) {
             throw new Error(result.error || "Unknown error occurred.");
         }
 
-        // Save data to localStorage
-        localStorage.setItem("projectName", document.getElementById("projectName").value.trim());
-        localStorage.setItem("modelType", document.getElementById("modelType").value);
-        localStorage.setItem("datasetType", document.getElementById("datasetType").value);
-        localStorage.setItem("model_py_file", document.getElementById("model_py_file").value);
-        localStorage.setItem("model_pth_file", document.getElementById("model_pth_file").value);
-        localStorage.setItem("custom_dataset", document.getElementById("custom_dataset").value);
-
         alert(result.message);
-        window.location.href = "steps.html"; // Navigate to steps.html
+        sessionStorage.setItem("project_info", result.project_info); // Store project info for view
+        window.location.href = "/steps"; // Navigate to steps.html
 
     } catch (error) {
         console.error("Error submitting configuration:", error.message || error);
@@ -246,14 +305,18 @@ async function fetchUpdates() {
         const result = await response.json();
         const updatesContainer = document.getElementById("progressUpdates");
 
-        // Add new progress update on a new line
-        updatesContainer.textContent += `\nStep ${result.step}: ${result.message}`;
+        if(result.message)
+            updatesContainer.textContent += `\n${result.message}`;  // Add new progress update on a new line
 
         // Check if all steps are complete
-        if (result.step < 10) {
-            setTimeout(fetchUpdates, 5000);
-        } else {
-            updatesContainer.textContent += `\nAll done! Setup process is finalized.`;
+        if (result.status === "UNKNOWN") {
+            updatesContainer.textContent += `\nProgress Unknown. Try Again!`;
+        } else if (result.status === "IN_PROGRESS"){
+            setTimeout(fetchUpdates, 2000);
+        } else if (result.status === "ERROR"){
+            updatesContainer.textContent += `\nWe encountered an error. Please try again!`;
+        } else{
+            updatesContainer.textContent += `\nAll done!`;
         }
     } catch (error) {
         console.error("Error fetching updates:", error);
@@ -303,16 +366,17 @@ function fetchSummary() {
  */
 function handleExitButtonClick() {
     alert("Exiting setup process...");
-    window.location.href = "setup.html";
+    window.location.href = "/setup";
 }
 
 // Attach event listeners
-if (window.location.pathname.endsWith("setup.html")) {
+if (window.location.pathname.endsWith("/setup")) {
     document.getElementById("submitButton").addEventListener("click", submitConfiguration);
     document.getElementById("modelType").addEventListener("change", toggleModelFields);
     document.getElementById("datasetType").addEventListener("change", toggleDatasetFields);
-    fetchTorchVisionData();}
-else if (window.location.pathname.endsWith("steps.html")) {
+    fetchConfigurationData();
+}
+else if (window.location.pathname.endsWith("/steps")) {
     fetchSummary();
     fetchUpdates();
     document.getElementById("exitButton").addEventListener("click", handleExitButtonClick);
