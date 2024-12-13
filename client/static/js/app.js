@@ -306,17 +306,17 @@ async function fetchUpdates() {
         const updatesContainer = document.getElementById("progressUpdates");
 
         if(result.message)
-            updatesContainer.textContent += `\n${result.message}`;  // Add new progress update on a new line
+            updatesContainer.innerHTML += `\n${result.message}`;  // Add new progress update on a new line
 
         // Check if all steps are complete
         if (result.status === "UNKNOWN") {
-            updatesContainer.textContent += `\nProgress Unknown. Try Again!`;
+            updatesContainer.innerHTML += `\nProgress Unknown. Try Again!`;
         } else if (result.status === "IN_PROGRESS"){
             setTimeout(fetchUpdates, 2000);
         } else if (result.status === "ERROR"){
-            updatesContainer.textContent += `\nWe encountered an error. Please try again!`;
+            updatesContainer.innerHTML += `\nWe encountered an error. Please try again!`;
         } else{
-            updatesContainer.textContent += `\nAll done!`;
+            updatesContainer.innerHTML += `\nAll done!\n<a href='${API_BASE}${result.download_link}' target='_blank'>Download Zip</a>`;
         }
     } catch (error) {
         console.error("Error fetching updates:", error);

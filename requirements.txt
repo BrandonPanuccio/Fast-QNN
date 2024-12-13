@@ -233,3 +233,4 @@ brevitas~=0.10.0
 qonnx~=0.3.0.post1.dev131+g2281a77
 redis~=5.2.1
 celery~=5.4.0
+APScheduler~=3.11.0

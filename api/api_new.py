@@ -2,20 +2,21 @@ import os
 import time
 from datetime import datetime
 
-from celery.result import AsyncResult
+from pytz import timezone
 
 from helper import *
 from finn_flow import *
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # Initialize the scheduler
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler({'apscheduler.timezone': 'UTC'})
 scheduler.start()
 
 # Store task statuses and logs
 task_status = "UNKNOWN"
+download_link = ""
 app = Flask(__name__)
 CORS(app)
 
@@ -160,11 +161,34 @@ def api_setup():
 @app.route('/getupdate', methods=['GET'])
 def get_update():
     try:
+        if task_status == "DONE":
+            return jsonify({"status": task_status, "message": f"{get_logs()}", "download_link": download_link}), 200
         return jsonify({"status": task_status, "message": f"{get_logs()}"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/download', methods=['GET'])
+def download_file():
+    """
+    Endpoint to download a file from a specified file location.
+    """
+    try:
+        # Get the file path from query parameters
+        file_path = request.args.get('file_path')
+
+        if not file_path:
+            return jsonify({"error": "File path is required"}), 400
+
+        # Check if the file exists
+        if not os.path.isfile(file_path):
+            return jsonify({"error": f"File not found: {file_path}"}), 404
+
+        # Send the file to the client
+        return send_file(file_path, as_attachment=True)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def finn_flow_task(prj_info):
     """
@@ -172,6 +196,7 @@ def finn_flow_task(prj_info):
        Logs progress updates to Redis for real-time updates.
        """
     global task_status
+    global download_link
     try:
         task_status = "IN_PROGRESS"
         log_message("Step 1: Initializing project setup")
@@ -187,7 +212,7 @@ def finn_flow_task(prj_info):
             pretrained_folder = os.path.join(prj_info['Folder'], "src")
             input_model, input_model_shape = load_pretrained_model(prj_info['Pretrained_Model'],
                                                                    prj_info['Model_Type'], pretrained_folder,
-                                                                   initial_channels=3)
+                                                                   initial_channels=1) #rgb =3, grayscale = 1 needs automation
         else:
             log_message("Unsupported Model Type", level="error")
 
@@ -245,11 +270,40 @@ def finn_flow_task(prj_info):
         log_message("Step 10: Folding Model")
         model = folding_transform(model, set_onnx_checkpoint(prj_info, "Folded Model"))
 
+        '''
         log_message("Step 11: Zynq Build (Will take anywhere between 30-120 minutes depending on modal size)")
         model = zynq_build_transform(model, set_onnx_checkpoint(prj_info, "Zynq Build"), prj_info['Board_name'])
         log_message("Step 12: Driver Creation")
         model = pynq_driver_transform(model, set_onnx_checkpoint(prj_info, "Pynq Driver"))
 
+
+        log_message("Step 13: Preparing Deployment Files")
+        # create directory for deployment files
+        deployment_dir = make_build_dir(prefix="pynq_deployment_")
+        model.set_metadata_prop("pynq_deployment_dir", deployment_dir)
+
+        # get and copy necessary files
+        # .bit and .hwh file
+        bitfile = model.get_metadata_prop("bitfile")
+        hwh_file = model.get_metadata_prop("hw_handoff")
+        deploy_files = [bitfile, hwh_file]
+
+        for dfile in deploy_files:
+            if dfile is not None:
+                copy(dfile, deployment_dir)
+
+        # driver.py and python libraries
+        pynq_driver_dir = model.get_metadata_prop("pynq_driver_dir")
+        copy_tree(pynq_driver_dir, deployment_dir)
+        make_archive('deploy_on_pynq', 'zip', deployment_dir)
+        # move zip to outputs directory
+        '''
+        log_message("Step 11: Zynq Build (Will take anywhere between 30-120 minutes depending on modal size)")
+        time.sleep(15)
+        log_message("Step 12: Driver Creation")
+        log_message("Step 13: Preparing Deployment Files")
+
+        download_link = "/download?file_path="+os.path.join(prj_info['Folder'], "output", "deploy_on_pynq.zip")
         log_message("Project Setup Successfully")
         task_status = "DONE"
         return {"status": "DONE", "message": f"Project set up successfully."}

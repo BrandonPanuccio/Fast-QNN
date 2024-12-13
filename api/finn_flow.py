@@ -678,3 +678,8 @@ def pynq_driver_transform(input_driver_model, save_name):
     input_driver_model.save(save_name)
 
     return input_driver_model
+
+from shutil import copy
+from distutils.dir_util import copy_tree
+from finn.util.basic import make_build_dir
+from shutil import make_archive
