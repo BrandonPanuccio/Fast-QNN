@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netron Viewer Setup</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            padding-top: 20px;
+        }
+        .title {
+            font-size: 2em;
+            color: #0073e6;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="title">Netron Viewer Setup</div>
+
+    <form method="POST" action="{{ url_for('setup') }}">
+        <!-- Project Name Input -->
+        <div class="form-group">
+            <label for="proj_name" class="form-label">Project Name</label>
+            <input type="text" class="form-control" id="proj_name" name="proj_name" value="{{ proj_name }}"
+                   placeholder="Enter project name" data-bs-toggle="tooltip" title="Unique project name to identify the models.">
+        </div>
+
+        <!-- ONNX Folder Path Input with Directory Chooser -->
+        <div class="form-group">
+            <label for="onnx_folder" class="form-label">ONNX Folder Path</label>
+            <input type="text" class="form-control" id="onnx_folder" name="onnx_folder" value="{{ onnx_folder }}" readonly
+                   placeholder="/absolute/path/to/onnx/files" data-bs-toggle="tooltip"
+                   title="Absolute path to the folder containing ONNX files.">
+            <!-- File Chooser (single file selection within folder) -->
+            <input type="file" id="file_in_folder" style="display: none;">
+            <button type="button" class="btn btn-outline-primary mt-2" onclick="selectFolder()"  data-bs-toggle="tooltip"
+                   title="Only works on WebKit Browsers">Choose Folder (Select any file inside)</button>
+
+            <!-- Fallback Manual Entry -->
+            <small class="form-text text-muted mt-1">Alternatively, you can manually enter the absolute folder path if selection doesn’t work.</small>
+            <input type="text" class="form-control mt-2" id="manual_folder_path"
+                   placeholder="Or manually enter absolute folder path" value="{{ onnx_folder }}" oninput="manualEntry()">
+        </div>
+
+        <!-- Netron Starting Port Input -->
+        <div class="form-group">
+            <label for="netron_start_port" class="form-label">Netron Starting Port</label>
+            <input type="number" class="form-control" id="netron_start_port" name="netron_start_port"
+                   value="{{ netron_start_port }}" placeholder="Starting port (e.g., 20123)" data-bs-toggle="tooltip"
+                   title="The port number Netron should start from (each model will use an incremented port).">
+        </div>
+
+        <!-- Submit Button -->
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Save and View Models</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+    // Folder selection by choosing a file within the folder
+    function selectFolder() {
+        const fileChooser = document.getElementById('file_in_folder');
+        fileChooser.click();
+
+        fileChooser.addEventListener('change', function() {
+            if (fileChooser.files.length > 0) {
+                // Get the directory path by removing the file name
+                const fullPath = fileChooser.files[0].webkitRelativePath || fileChooser.files[0].name;
+                const folderPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
+                document.getElementById('onnx_folder').value = folderPath;
+                document.getElementById('manual_folder_path').value = "";  // Clear manual input if folder was chosen
+            }
+        });
+    }
+
+    // Manual entry for the ONNX folder path
+    function manualEntry() {
+        const manualInput = document.getElementById('manual_folder_path').value;
+        document.getElementById('onnx_folder').value = manualInput;  // Update hidden ONNX folder input
+    }
+</script>
+
+</body>
+</html>

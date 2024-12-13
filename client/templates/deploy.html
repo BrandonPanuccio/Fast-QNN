@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast QNN - Deployment</title>
+    <link rel="stylesheet" href="../static/css/styles.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        #outputConsole {
+            background-color: #1e1e1e;
+            color: #c5c6c7;
+            font-family: monospace;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 5px;
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body class="bg-dark text-white">
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Deployment</h1>
+
+    <!-- Links Section -->
+    <div class="card bg-secondary text-white mb-4">
+        <div class="card-header">Download Options</div>
+        <div class="card-body text-center">
+            <a id="downloadDeploymentZip" href="#" class="btn btn-primary mb-2" target="_blank">Download Deployment Zip</a>
+            <a id="downloadCheckpointsZip" href="#" class="btn btn-primary mb-2" target="_blank">Download Checkpoints Zip</a>
+            <a id="viewCheckpointsNetron" href="#" class="btn btn-primary" target="_blank">View Checkpoints in Netron Viewer</a>
+        </div>
+    </div>
+
+    <!-- USB Options Section -->
+    <div class="card bg-secondary text-white mb-4">
+        <div class="card-header">USB Options</div>
+        <div class="card-body">
+            <form id="usbOptionsForm">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="usbOption" id="usbCopyOption" value="copy">
+                    <label class="form-check-label" for="usbCopyOption">
+                        Copy Zip to USB
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="usbOption" id="usbAlreadyOption" value="already">
+                    <label class="form-check-label" for="usbAlreadyOption">
+                        Already on USB
+                    </label>
+                </div>
+
+                <!-- Copy to USB Section -->
+                <div id="usbCopySection" style="display: none;">
+                    <div class="form-group">
+                        <label for="usbDevice">Select USB Device</label>
+                        <select id="usbDevice" class="form-control">
+                            <option value="" disabled selected>Select a device</option>
+                            <!-- USB devices will be populated here dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="zipFile">Select Zip File</label>
+                        <input type="file" id="zipFile" class="form-control" accept="application/zip">
+                    </div>
+                    <button type="button" id="copyButton" class="btn btn-primary">Copy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Board Instructions -->
+    <div id="boardInstructions" class="card bg-secondary text-white mb-4" style="display: none;">
+        <div class="card-header">Board Setup Instructions</div>
+        <div class="card-body">
+            <p>Turn on your <span id="boardName"></span> and ensure it is booted up and on the same network.</p>
+            <p>Once the board is ready, ensure the USB is plugged in.</p>
+        </div>
+    </div>
+
+    <!-- Deployment Form -->
+    <div id="deploymentForm" class="card bg-secondary text-white mb-4" style="display: none;">
+        <div class="card-header">Deploy to Board</div>
+        <div class="card-body">
+            <form>
+                <div class="form-group">
+                    <label for="boardIp">Board IP Address</label>
+                    <input type="text" id="boardIp" class="form-control" value="192.168.2.99" placeholder="Enter Board IP">
+                </div>
+                <div class="form-group">
+                    <label for="boardUsername">Username</label>
+                    <input type="text" id="boardUsername" class="form-control" value="xilinx" placeholder="Enter Username">
+                </div>
+                <div class="form-group">
+                    <label for="boardPassword">Password</label>
+                    <input type="password" id="boardPassword" class="form-control" value="xilinx" placeholder="Enter Password">
+                </div>
+                <button type="button" id="deployButton" class="btn btn-success">Deploy</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Output Section -->
+    <div id="outputConsole"></div>
+
+    <!-- Test Camera Application -->
+    <div class="text-center mt-4">
+        <button id="testCameraSection" class="btn btn-info">Test Camera Application</button>
+        <button id="exitButton" class="btn btn-danger">Exit</button>
+    </div>
+</div>
+
+<script src="../static/js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/event-source-polyfill"></script>
+</body>
+</html>

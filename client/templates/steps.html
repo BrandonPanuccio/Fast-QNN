@@ -10,6 +10,25 @@
 <body class="bg-dark text-white">
 <div class="container mt-5">
     <h1 class="text-center mb-4">Configuration Summary</h1>
+
+    <!-- Summary Section -->
+    <div class="card bg-secondary text-white mb-4">
+        <div class="card-header">Summary</div>
+        <div class="card-body">
+            <table class="table table-dark table-striped">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryTable">
+                    <!-- Dynamic content will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Unified Progress Update Section -->
     <div class="card bg-secondary mb-4">
         <div class="card-header text-white">Progress Update</div>
@@ -23,6 +42,7 @@
 
     <!-- Action Buttons -->
     <div class="text-center">
+        <button id="deployButton" class="btn btn-success" style="display: none">Deploy to Board</button>
         <button id="exitButton" class="btn btn-danger">Exit</button>
     </div>
 </div>

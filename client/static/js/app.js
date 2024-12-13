@@ -210,7 +210,7 @@ function validateInputs() {
 
     // Validate TorchVision dataset name if required
     const torchVisionDataset = document.getElementById("torch_vision_dataset").value.trim();
-    if (datasetType === "torch_vision_dataset" && !torchVisionDataset && (modelType !== "sample_untrained" || modelType !== "untrained")) {
+    if (datasetType === "torch_vision_dataset" && !torchVisionDataset && (modelType === "sample_untrained" || modelType === "untrained")) {
         setError("torch_vision_dataset", "TorchVision dataset name is required.");
         isValid = false;
     }
@@ -284,8 +284,8 @@ async function submitConfiguration(event) {
             throw new Error(result.error || "Unknown error occurred.");
         }
 
+        sessionStorage.setItem("project_info", JSON.stringify(result.project_info)); // Store project info for view
         alert(result.message);
-        sessionStorage.setItem("project_info", result.project_info); // Store project info for view
         window.location.href = "/steps"; // Navigate to steps.html
 
     } catch (error) {
@@ -318,6 +318,9 @@ async function fetchUpdates() {
         } else{
             updatesContainer.innerHTML += `\nAll done!\n<a href='${API_BASE}${result.download_link}' target='_blank'>Download Deployment Zip</a>`;
             updatesContainer.innerHTML += `\n<a href='${API_BASE}${result.checkpoint_link}' target='_blank'>Download Checkpoints Zip</a>`;
+        sessionStorage.setItem("deploymentZipLink", `${API_BASE}${result.download_link}`); // Store project info for view
+        sessionStorage.setItem("checkpointsZipLink", `${API_BASE}${result.checkpoint_link}`); // Store project info for view
+            document.getElementById("deployButton").style.display = "inline";
         }
     } catch (error) {
         console.error("Error fetching updates:", error);
@@ -338,28 +341,41 @@ function fetchSummary() {
         return;
     }
 
-    // Retrieve matching field names from localStorage
-    const projectName = localStorage.getItem("projectName");
-    const modelType = localStorage.getItem("modelType");
-    const datasetType = localStorage.getItem("datasetType");
-    const model_py_file = localStorage.getItem("model_py_file");
-    const model_pth_file = localStorage.getItem("model_pth_file");
-    const torch_vision_model = localStorage.getItem("torch_vision_model");
-    const custom_dataset = localStorage.getItem("custom_dataset");
-    const torch_vision_dataset = localStorage.getItem("torch_vision_dataset");
+    // Retrieve `project_info` from sessionStorage
+    const projectInfo = sessionStorage.getItem("project_info");
+    if (!projectInfo) {
+        console.error("No project info found in sessionStorage.");
+        return;
+    }
 
-    const rows = `
-        <tr><td>Project Name</td><td>${projectName || "N/A"}</td></tr>
-        <tr><td>Model Type</td><td>${modelType || "N/A"}</td></tr>
-        <tr><td>Dataset Type</td><td>${datasetType || "N/A"}</td></tr>
-        <tr><td>.py File</td><td>${model_py_file || "N/A"}</td></tr>
-        <tr><td>.pth File</td><td>${model_pth_file|| "N/A"}</td></tr>
-        <tr><td>Torchvision Model</td><td>${torch_vision_model || "N/A"}</td></tr>
-        <tr><td>Custom Dataset</td><td>${custom_dataset || "N/A"}</td></tr>
-        <tr><td>Torchvision Dataset</td><td>${torch_vision_dataset || "N/A"}</td></tr>
-    `;
-    summaryTable.innerHTML = rows;
+    try {
+        // Parse the JSON string into an object
+        const projectData = JSON.parse(projectInfo);
+
+        // Generate table rows dynamically
+        let rows = "";
+        for (const [key, value] of Object.entries(projectData)) {
+            // Ensure proper display of values, including strings, numbers, and paths
+            const displayValue =
+                value !== null && value !== undefined
+                    ? value
+                    : "N/A";
+
+            rows += `
+                <tr>
+                    <td>${key}</td>
+                    <td>${displayValue}</td>
+                </tr>
+            `;
+        }
+
+        // Update the table with the generated rows
+        summaryTable.innerHTML = rows;
+    } catch (error) {
+        console.error("Failed to parse project info:", error);
+    }
 }
+
 
 
 /**
@@ -370,9 +386,14 @@ function handleExitButtonClick() {
     window.location.href = "/setup";
 }
 
+function handleDeployButtonClick() {
+    window.location.href = "/deploy";
+}
+
 // Attach event listeners
 if (window.location.pathname.endsWith("/setup")) {
     document.getElementById("submitButton").addEventListener("click", submitConfiguration);
+    document.getElementById("deployButton").addEventListener("click", handleDeployButtonClick);
     document.getElementById("modelType").addEventListener("change", toggleModelFields);
     document.getElementById("datasetType").addEventListener("change", toggleDatasetFields);
     fetchConfigurationData();
@@ -381,8 +402,169 @@ else if (window.location.pathname.endsWith("/steps")) {
     fetchSummary();
     fetchUpdates();
     document.getElementById("exitButton").addEventListener("click", handleExitButtonClick);
+    document.getElementById("deployButton").addEventListener("click", handleDeployButtonClick);
+}
+else if (window.location.pathname.endsWith("/deploy")) {
+    const projectInfo = sessionStorage.getItem("project_info");
+    document.addEventListener("DOMContentLoaded", function () {
+    if(projectInfo) {
+        const projectData = JSON.parse(projectInfo);
+        document.getElementById("exitButton").addEventListener("click", handleExitButtonClick);
+        // Populate links from sessionStorage
+        const deploymentZipLink = sessionStorage.getItem("deploymentZipLink");
+        const checkpointsZipLink = sessionStorage.getItem("checkpointsZipLink");
+        const netronViewerLink = '/start_netron_viewer?proj_name='+projectData.Stripped_Name+'&zip_link=' + checkpointsZipLink;
+
+        document.getElementById("downloadDeploymentZip").href = deploymentZipLink || "#";
+        document.getElementById("downloadCheckpointsZip").href = checkpointsZipLink || "#";
+        document.getElementById("viewCheckpointsNetron").href = netronViewerLink || "#";
+        document.getElementById("boardName").textContent = projectData.Board_name || "board";
+    }
+
+    const usbDeviceDropdown = document.getElementById("usbDevice");
+    const copyButton = document.getElementById("copyButton");
+    const zipFileInput = document.getElementById("zipFile");
+    const usbCopySection = document.getElementById("usbCopySection");
+    const boardInstructions = document.getElementById("boardInstructions");
+    const deploymentForm = document.getElementById("deploymentForm");
+
+    // Fetch USB devices and populate the dropdown
+    async function fetchUsbDevices() {
+        try {
+            const response = await fetch('/list_usb_devices');
+            if (!response.ok) {
+                throw new Error('Failed to fetch USB devices');
+            }
+            const data = await response.json();
+            if (data.devices && data.devices.length > 0) {
+                usbDeviceDropdown.innerHTML = '<option value="" disabled selected>Select a device</option>';
+                data.devices.forEach(device => {
+                    const option = document.createElement("option");
+                    option.value = device.mountpoint;
+                    option.textContent = `${device.name} (${device.mountpoint})`;
+                    usbDeviceDropdown.appendChild(option);
+                });
+            } else {
+                usbDeviceDropdown.innerHTML = '<option value="" disabled selected>No USB devices found</option>';
+            }
+        } catch (error) {
+            console.error('Error fetching USB devices:', error);
+            usbDeviceDropdown.innerHTML = '<option value="" disabled selected>Error fetching devices</option>';
+        }
+    }
+
+    // Handle the copy button click
+    copyButton.addEventListener("click", async function () {
+    const usbDevice = usbDeviceDropdown.value;
+    const zipFile = zipFileInput.files[0];
+
+    if (!usbDevice) {
+        alert("Please select a USB device.");
+        return;
+    }
+
+    if (!zipFile) {
+        alert("Please select a zip file.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("usb_device", usbDevice);
+    formData.append("zip_file", zipFile);
+
+    try {
+        const response = await fetch('/copy_to_usb', {
+            method: "POST",
+            body: formData // Use FormData to send the entire file
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            alert(result.message);
+            boardInstructions.style.display = "block";
+            deploymentForm.style.display = "block";
+        } else {
+            alert(`Error: ${result.error}`);
+        }
+    } catch (error) {
+        console.error("Error copying file:", error);
+        alert("An error occurred while copying the file.");
+    }
+});
+
+    // Load USB devices on page load
+    fetchUsbDevices();
+
+    // USB options toggle
+    document.querySelectorAll('input[name="usbOption"]').forEach(option => {
+        option.addEventListener("change", function () {
+            usbCopySection.style.display = this.value === "copy" ? "block" : "none";
+            boardInstructions.style.display = this.value === "copy" ? "none" : "block";
+            deploymentForm.style.display = this.value === "copy" ? "none" : "block";
+        });
+    });
+
+    async function handleSSE(url, params) {
+    const consoleOutput = document.getElementById("outputConsole");
+    consoleOutput.textContent = ""; // Clear previous content
+
+    const queryString = new URLSearchParams(params).toString();
+    const eventSource = new EventSource(`${url}?${queryString}`);
+
+    eventSource.onmessage = function (event) {
+        if (event.data === "END") {
+            consoleOutput.textContent += "Stream ended.\n";
+            eventSource.close();
+        } else {
+            consoleOutput.innerHTML += event.data + "\n\n\n";
+        }
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    };
+
+    eventSource.onerror = function (error) {
+        consoleOutput.textContent += "Error in stream.\n";
+        console.error("Error with EventSource:", error);
+        eventSource.close();
+    };
 }
 
+    document.getElementById("testCameraSection").addEventListener("click", async function () {
+    const boardIp = document.getElementById("boardIp").value;
+    const boardUsername = document.getElementById("boardUsername").value;
+    const boardPassword = document.getElementById("boardPassword").value;
 
+    if (!boardIp || !boardUsername || !boardPassword) {
+        alert("Please fill out all fields before testing.");
+        return;
+    }
+
+    handleSSE("/test_camera", {
+        board_ip: boardIp,
+        board_username: boardUsername,
+        board_password: boardPassword,
+    });
+});
+
+document.getElementById("deployButton").addEventListener("click", async function () {
+    const boardIp = document.getElementById("boardIp").value;
+    const boardUsername = document.getElementById("boardUsername").value;
+    const boardPassword = document.getElementById("boardPassword").value;
+
+    if (!boardIp || !boardUsername || !boardPassword) {
+        alert("Please fill out all fields before deploying.");
+        return;
+    }
+
+    handleSSE("/deploy_to_board", {
+        board_ip: boardIp,
+        board_username: boardUsername,
+        board_password: boardPassword,
+    });
+});
+
+
+});
+
+}
 
 
