@@ -307,7 +307,7 @@ def finn_flow_task(prj_info):
 
         download_link = "/download?file_path="+os.path.join(prj_info['Folder'], "output", "deploy_on_pynq.zip")
         make_archive(os.path.join(prj_info['Folder'], "output", "checkpoints"), 'zip', os.path.join(prj_info['Folder'], "checkpoints"))
-        checkpoint_link = "/download?file_path="+os.path.join(prj_info['Folder'], "output", "checkpoints.zip")
+        checkpoint_link = "/download?file_path="+os.path.join(prj_info['Folder'], "output", "checkpoints.zip") #need to preserve timestamp for netron viewer
         log_message("Project Setup Successfully")
         task_status = "DONE"
         return {"status": "DONE", "message": f"Project set up successfully."}
