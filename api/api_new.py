@@ -17,6 +17,7 @@ scheduler.start()
 # Store task statuses and logs
 task_status = "UNKNOWN"
 download_link = ""
+checkpoint_link = ""
 app = Flask(__name__)
 CORS(app)
 
@@ -162,7 +163,7 @@ def api_setup():
 def get_update():
     try:
         if task_status == "DONE":
-            return jsonify({"status": task_status, "message": f"{get_logs()}", "download_link": download_link}), 200
+            return jsonify({"status": task_status, "message": f"{get_logs()}", "download_link": download_link, "checkpoint_link": checkpoint_link}), 200
         return jsonify({"status": task_status, "message": f"{get_logs()}"}), 200
 
     except Exception as e:
@@ -197,6 +198,7 @@ def finn_flow_task(prj_info):
        """
     global task_status
     global download_link
+    global checkpoint_link
     try:
         task_status = "IN_PROGRESS"
         log_message("Step 1: Initializing project setup")
@@ -295,7 +297,7 @@ def finn_flow_task(prj_info):
         # driver.py and python libraries
         pynq_driver_dir = model.get_metadata_prop("pynq_driver_dir")
         copy_tree(pynq_driver_dir, deployment_dir)
-        make_archive('deploy_on_pynq', 'zip', deployment_dir)
+        make_archive(os.path.join(prj_info['Folder'], "output", "deploy_on_pynq"), 'zip', deployment_dir)
         # move zip to outputs directory
         '''
         log_message("Step 11: Zynq Build (Will take anywhere between 30-120 minutes depending on modal size)")
@@ -304,6 +306,8 @@ def finn_flow_task(prj_info):
         log_message("Step 13: Preparing Deployment Files")
 
         download_link = "/download?file_path="+os.path.join(prj_info['Folder'], "output", "deploy_on_pynq.zip")
+        make_archive(os.path.join(prj_info['Folder'], "output", "checkpoints"), 'zip', os.path.join(prj_info['Folder'], "checkpoints"))
+        checkpoint_link = "/download?file_path="+os.path.join(prj_info['Folder'], "output", "checkpoints.zip")
         log_message("Project Setup Successfully")
         task_status = "DONE"
         return {"status": "DONE", "message": f"Project set up successfully."}

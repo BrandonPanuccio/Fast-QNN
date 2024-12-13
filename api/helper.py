@@ -129,9 +129,9 @@ def ensure_directory_exists(dir_path):
         for filename in os.listdir(clear_path):
             file_path = os.path.join(clear_path, filename)
             try:
-                if os.path.isfile(file_path) or os.path.islink(file_path) or 'zip' not in file_path:
+                if (os.path.isfile(file_path) or os.path.islink(file_path)) and 'zip' not in file_path:
                     os.unlink(file_path)  # Remove file or link
-                elif os.path.isdir(file_path) or 'output' not in file_path:
+                elif os.path.isdir(file_path) and 'output' not in file_path:
                     shutil.rmtree(file_path)  # Remove directory and all contents
             except Exception as e:
                 print(f'Failed to delete {file_path}. Reason: {e}')

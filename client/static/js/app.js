@@ -316,7 +316,8 @@ async function fetchUpdates() {
         } else if (result.status === "ERROR"){
             updatesContainer.innerHTML += `\nWe encountered an error. Please try again!`;
         } else{
-            updatesContainer.innerHTML += `\nAll done!\n<a href='${API_BASE}${result.download_link}' target='_blank'>Download Zip</a>`;
+            updatesContainer.innerHTML += `\nAll done!\n<a href='${API_BASE}${result.download_link}' target='_blank'>Download Deployment Zip</a>`;
+            updatesContainer.innerHTML += `\n<a href='${API_BASE}${result.checkpoint_link}' target='_blank'>Download Checkpoints Zip</a>`;
         }
     } catch (error) {
         console.error("Error fetching updates:", error);
