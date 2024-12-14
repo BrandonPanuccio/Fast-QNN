@@ -1092,6 +1092,7 @@ def get_update():
 
             progress_step = "Streamlining"
             return jsonify({"step": progress_step, "message": get_logs(), "log": f"{get_logs()}"}), 200
+        from finn.transformation.qonnx.qonnx_activation_handlers import QuantActBaseHandler, np_default_dtype
 
         if progress_step == "Streamlining":
             model = streamline_transforms(model, set_onnx_checkpoint(Project_Info, "Streamlined ONNX"))
