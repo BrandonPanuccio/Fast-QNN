@@ -1,53 +1,75 @@
-import torch
 import torch.nn as nn
-from brevitas.nn import QuantConv2d, QuantLinear, QuantReLU, QuantMaxPool2d, QuantIdentity
-from common import CommonWeightQuant, CommonActQuant
 
-class AlexNetQuant(nn.Module):
-    def __init__(self, num_classes=1000, weight_bit_width=1, act_bit_width=1):
-        super(AlexNetQuant, self).__init__()
+import brevitas.nn as qnn
 
-        weight_quant = CommonWeightQuant
-        act_quant = CommonActQuant
+class QuantAlexNet(nn.Module):
+    """
+    A slightly adapted AlexNet-like architecture for 28x28 MNIST images.
+    Uses Brevitas quantization layers (QuantConv2d, QuantLinear, QuantReLU).
+    """
+
+    def __init__(self, num_bits=8, num_classes=10):
+        super(QuantAlexNet, self).__init__()
+
+        # Instead of specifying explicit quant module wrappers, you can directly pass
+        # weight_bit_width=num_bits and act_bit_width=num_bits to Brevitas layers.
+        # We'll do it this way for simplicity:
 
         self.features = nn.Sequential(
-            QuantIdentity(act_quant=act_quant, bit_width=act_bit_width, return_quant_tensor=True),
-            QuantConv2d(3, 64, kernel_size=11, stride=4, padding=2, weight_quant=weight_quant,
-                        bit_width=weight_bit_width, bias=False),
-            QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
-            QuantMaxPool2d(kernel_size=3, stride=2, padding=1),
+            # 1st Conv
+            qnn.QuantConv2d(
+                in_channels=1, out_channels=64, kernel_size=11, stride=4, padding=2,
+                weight_bit_width=num_bits, bias=False
+            ),
+            qnn.QuantReLU(bit_width=num_bits),
+            nn.MaxPool2d(kernel_size=2, stride=2),
 
-            QuantConv2d(64, 192, kernel_size=5, padding=2, weight_quant=weight_quant, bit_width=weight_bit_width,
-                        bias=False),
-            QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
-            QuantMaxPool2d(kernel_size=3, stride=2, padding=1),
+            # 2nd Conv
+            qnn.QuantConv2d(
+                in_channels=64, out_channels=192, kernel_size=5, padding=2,
+                weight_bit_width=num_bits, bias=False
+            ),
+            qnn.QuantReLU(bit_width=num_bits),
+            nn.MaxPool2d(kernel_size=2, stride=2),
 
-            QuantConv2d(192, 384, kernel_size=3, padding=1, weight_quant=weight_quant, bit_width=weight_bit_width,
-                        bias=False),
-            QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
+            # 3rd Conv
+            qnn.QuantConv2d(
+                in_channels=192, out_channels=384, kernel_size=3, padding=1,
+                weight_bit_width=num_bits, bias=False
+            ),
+            qnn.QuantReLU(bit_width=num_bits),
 
-            QuantConv2d(384, 256, kernel_size=3, padding=1, weight_quant=weight_quant, bit_width=weight_bit_width,
-                        bias=False),
-            QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
+            # 4th Conv
+            qnn.QuantConv2d(
+                in_channels=384, out_channels=256, kernel_size=3, padding=1,
+                weight_bit_width=num_bits, bias=False
+            ),
+            qnn.QuantReLU(bit_width=num_bits),
 
-            QuantConv2d(256, 256, kernel_size=3, padding=1, weight_quant=weight_quant, bit_width=weight_bit_width,
-                        bias=False),
-            QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
-            QuantMaxPool2d(kernel_size=3, stride=2, padding=1)
+            # 5th Conv
+            qnn.QuantConv2d(
+                in_channels=256, out_channels=256, kernel_size=3, padding=1,
+                weight_bit_width=num_bits, bias=False
+            ),
+            qnn.QuantReLU(bit_width=num_bits)
+            # We omit the final max-pool from classic AlexNet because it would collapse MNIST's 1x1 to 0x0.
         )
 
+        # After the 5th convolution, the spatial dimension is (likely) 1x1 => flattened dimension = 256
         self.classifier = nn.Sequential(
-            QuantLinear(256 * 4 * 4, 4096, weight_quant=weight_quant, bit_width=weight_bit_width, bias=False),
-            QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
+            nn.Dropout(p=0.5),
+            qnn.QuantLinear(256, 4096, weight_bit_width=num_bits, bias=False),
+            qnn.QuantReLU(bit_width=num_bits),
 
-            QuantLinear(4096, 4096, weight_quant=weight_quant, bit_width=weight_bit_width, bias=False),
-            QuantReLU(act_quant=act_quant, bit_width=act_bit_width),
+            nn.Dropout(p=0.5),
+            qnn.QuantLinear(4096, 4096, weight_bit_width=num_bits, bias=False),
+            qnn.QuantReLU(bit_width=num_bits),
 
-            QuantLinear(4096, num_classes, weight_quant=weight_quant, bit_width=weight_bit_width, bias=False)
+            qnn.QuantLinear(4096, num_classes, weight_bit_width=num_bits, bias=False)
         )
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(x.size(0), -1)
+        x = x.view(x.size(0), -1)  # Flatten
         x = self.classifier(x)
         return x
