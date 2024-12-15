@@ -1,12 +1,13 @@
 from finn.util.basic import pynq_part_map
 from torchvision import datasets
+from pre_models import  *
 import os
 
 # Output directories
 WORKING_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)),"outputs/")
 
 available_boards = list(pynq_part_map.keys())
-sample_pretrained_models = ["alexnet_mnist", "resnet_mnist", "alexnet_cifar10", "resnet_cifar10"]
+sample_pretrained_models = ["alexnet_3w3a_cifar10", "alexnet_3w3a_mnist"]
 sample_untrained_models = ["alexnet", "resnet"]
 finn_pretrained_models = ["cnv_1w1a", "cnv_1w2a", "cnv_2w2a", "lfc_1w1a", "lfc_1w2a", "sfc_1w1a", "sfc_1w2a", "sfc_2w2a", "tfc_1w1a", "tfc_1w2a", "tfc_2w2a", "quant_mobilenet_v1_4b"]
 available_datasets = [cls_name.lower() for cls_name in dir(datasets) if not cls_name.startswith('_')]

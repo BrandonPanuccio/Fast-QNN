@@ -1,3 +1,5 @@
+from finn.transformation.fpgadataflow.set_fifo_depths import InsertAndSetFIFODepths
+
 from helper import *
 
 def setup_project(prj_name, brd_name, model_type, project_folder=None, model_py_file=None, model_pth_file=None,
@@ -141,8 +143,17 @@ def load_pretrained_model(model_name, model_type, src_folder, initial_channels=3
     os.environ['TORCH_HOME'] = src_folder
     pretrained_model = None
     if model_type == "sample_pretrained":
-        # Load sample pretrained model
-        pass
+        if model_name == "alexnet_3w3a_cifar10":
+            pretrained_model = QuantAlexNet(num_bits=3, num_classes=10).to('cpu')
+            pretrained_model.load_state_dict(
+                torch.load("/home/fastqnn/finn/notebooks/Fast-QNN/alexnet_3w3a_cifar10.pth",
+                           map_location=torch.device('cpu')))
+            pretrained_model.eval()
+        if model_name == "alexnet_3w3a_mnist":
+            pretrained_model = QuantAlexNet(num_bits=3, num_classes=10).to('cpu')
+            pretrained_model.load_state_dict(torch.load("/home/fastqnn/finn/notebooks/Fast-QNN/alexnet_3w3a_mnist.pth",
+                                                        map_location=torch.device('cpu')))
+            pretrained_model.eval()
     elif model_type == "finn_pretrained":
         if model_name == "cnv_1w1a":
             pretrained_model = get_test_model_trained("CNV", 1, 1)
@@ -585,51 +596,371 @@ def specialize_layers_transform(input_specialize_model, board_name, save_name):
 
     return input_specialize_model
 
+import math
+import os
+from finn.transformation.fpgadataflow.set_folding import SetFolding
+from finn.transformation.fpgadataflow.insert_dwc import InsertDWC
+from finn.transformation.fpgadataflow.specialize_layers import SpecializeLayers
+from finn.transformation.fpgadataflow.insert_iodma import InsertIODMA
+from qonnx.custom_op.registry import getCustomOp
+from functools import partial
+import matplotlib.pyplot as plt
 
-def folding_transform(input_folding_model, save_name):
+def get_int_attr(node_inst, attr_name = None):
     """
-    Applies folding configuration to fully connected (MVAU_hls) and sliding window (ConvolutionInputGenerator_rtl)
-    layers in the model and saves the resulting model.
+    Safely retrieves an integer attribute from a node.
+
+    Parameters:
+        node_inst: The node instance.
+        attr_name (str): The name of the attribute to retrieve.
+
+    Returns:
+        int: The integer value of the attribute.
+    """
+    if attr_name is not None:
+        attr = node_inst.get_nodeattr(attr_name)
+    else:
+        attr = node_inst
+    if isinstance(attr, (tuple, list)):
+        if len(attr) == 0:
+            raise ValueError(f"Attribute '{attr_name}' for node '{node_inst.name}' is an empty tuple/list.")
+        return get_int_attr(attr[0])
+    elif isinstance(attr, int):
+        return attr
+    else:
+        raise TypeError(f"Attribute '{attr_name}' for node '{node_inst.name}' is of unsupported type {type(attr)}.")
+
+
+from qonnx.custom_op.registry import getCustomOp
+
+def calculate_simd(ifm_channels, max_simd):
+    """
+    Calculates the largest possible SIMD value that divides IFMChannels without remainder.
+
+    Parameters:
+        ifm_channels (int): Number of Input Feature Map Channels.
+        max_simd (int): Maximum allowed SIMD value.
+
+    Returns:
+        int: Calculated SIMD value.
+    """
+    for simd in range(max_simd, 0, -1):
+        if ifm_channels % simd == 0:
+            return simd
+    return 1  # Fallback to 1 if no divisors found
+
+
+def generate_valid_folding_factors(
+    folding_model,
+    max_pe=8,         # Significantly reduced
+    max_simd=8,       # Significantly reduced
+    max_bitwidth=8191,
+    max_total_ram=280   # FPGA RAMB18 capacity
+):
+    """
+    Generates a folding configuration dictionary ensuring all constraints are met,
+    utilizing the 'infifodepth' attributes set by InsertAndSetFIFODepths.
+
+    Parameters:
+        folding_model (ModelWrapper): The FINN model.
+        max_pe (int): Maximum allowed PE value.
+        max_simd (int): Maximum allowed SIMD value.
+        max_bitwidth (int): Maximum allowed stream width in bits.
+        max_total_ram (int): Maximum total RAMB18s available on the FPGA.
+
+    Returns:
+        dict: A dictionary with node names as keys and their folding parameters as values.
+    """
+    folding_config = {}
+
+    relevant_node_types = ["MVAU_hls", "VVAU"]
+
+    for node_type in relevant_node_types:
+        layers = folding_model.get_nodes_by_op_type(node_type)
+        for node in layers:
+            node_inst = getCustomOp(node)
+            node_name = node.name
+
+            if node_type == "ConvolutionInputGenerator_rtl":
+                # For ConvolutionInputGenerator_rtl, set only SIMD
+                # Derive SIMD based on IFMChannels
+                ifm_channels = node_inst.get_input_shape()[-1]  # Assuming NHWC or similar format
+                simd = calculate_simd(ifm_channels, max_simd)
+
+                # Validate bitwidth constraint
+                input_bitwidth = node_inst.get_input_datatype().bitwidth()
+                assert simd * input_bitwidth <= max_bitwidth, f"SIMD * input_bitwidth for node '{node_name}' exceeds max_bitwidth"
+
+                folding_config[node_name] = {
+                    "SIMD": simd
+                }
+                log_message(f"Node '{node_name}': Set SIMD={simd} based on IFMChannels={ifm_channels}.", "info")
+                continue
+            try:
+                MW = get_int_attr(node_inst, "MW")
+                MH = get_int_attr(node_inst, "MH")
+            except (ValueError, TypeError, AttributeError) as e:
+                log_message(f"Error retrieving attributes for node '{node_name}': {e}", "error")
+                continue  # Skip this node or handle as needed
+
+            input_bitwidth = node_inst.get_input_datatype().bitwidth()
+            output_bitwidth = node_inst.get_output_datatype().bitwidth()
+
+            # Calculate minimum required SIMD based on HLS constraint
+            min_simd = math.ceil(MW / 1024)
+            log_message(f"Node '{node_name}': MW={MW}, min_simd={min_simd}", "info")
+
+            # Determine valid SIMD: largest divisor of MW <= max_simd and ensures (SIMD * input_bitwidth) <= max_bitwidth
+            simd_candidates = [
+                x for x in range(min_simd, min(max_simd, MW) + 1)
+                if MW % x == 0 and (x * input_bitwidth) <= max_bitwidth
+            ]
+            simd = max(simd_candidates) if simd_candidates else min_simd
+            log_message(f"Node '{node_name}': SIMD candidates={simd_candidates}, selected SIMD={simd}", "info")
+
+            # Determine valid PE: largest divisor of MH <= max_pe and ensures (PE * output_bitwidth) <= max_bitwidth
+            pe_candidates = [
+                x for x in range(1, min(max_pe, MH) + 1)
+                if MH % x == 0 and (x * output_bitwidth) <= max_bitwidth
+            ]
+            pe = max(pe_candidates) if pe_candidates else 1
+            log_message(f"Node '{node_name}': PE candidates={pe_candidates}, selected PE={pe}", "info")
+
+            folding_config[node_name] = {
+                "PE": pe,
+                "SIMD": simd
+            }
+            log_message(
+                f"Configured node '{node_name}' with PE={pe}, SIMD={simd}. "
+                "info"
+            )
+
+    return folding_config
+
+def apply_folding_config(folding_model, folding_config):
+    """
+    Applies the folding configuration to the model.
+
+    Parameters:
+        folding_model (ModelWrapper): The FINN model.
+        folding_config (dict): Folding configuration dictionary.
+
+    Returns:
+        ModelWrapper: The model with updated folding parameters.
+    """
+    for node_name, config in folding_config.items():
+        try:
+            # Attempt to retrieve the node by its name
+            node = folding_model.get_node_from_name(node_name)
+        except AttributeError:
+            log_message(f"Node '{node_name}' not found in the model.", "error")
+            continue  # Skip to the next node if not found
+
+        # Retrieve the custom operation instance
+        node_inst = getCustomOp(node)
+
+        # Flag to track if any attribute was set for logging purposes
+        attributes_set = []
+
+        # Assign PE if it exists in the configuration
+        if "PE" in config:
+            pe_value = config["PE"]
+            node_inst.set_nodeattr("PE", pe_value)
+            attributes_set.append(f"PE={pe_value}")
+            log_message(f"Node '{node_name}': Set PE to {pe_value}.", "info")
+        else:
+            log_message(f"Node '{node_name}': 'PE' not specified in configuration. Skipping PE assignment.", "debug")
+
+        # Assign SIMD if it exists in the configuration
+        if "SIMD" in config:
+            simd_value = config["SIMD"]
+            node_inst.set_nodeattr("SIMD", simd_value)
+            attributes_set.append(f"SIMD={simd_value}")
+            log_message(f"Node '{node_name}': Set SIMD to {simd_value}.", "info")
+        else:
+            log_message(f"Node '{node_name}': 'SIMD' not specified in configuration. Skipping SIMD assignment.", "debug")
+
+        # Log summary of assignments for the current node
+        if attributes_set:
+            assigned_attrs = ", ".join(attributes_set)
+            log_message(f"Node '{node_name}': Assigned attributes -> {assigned_attrs}.", "info")
+        else:
+            log_message(f"Node '{node_name}': No attributes assigned.", "warning")
+
+    return folding_model
+
+
+def validate_stream_widths(folding_model, max_bitwidth=8191):
+    """
+    Validates that all stream widths are within the allowed maximum.
+
+    Parameters:
+        folding_model (ModelWrapper): The FINN model.
+        max_bitwidth (int): Maximum allowed stream width in bits.
+
+    Raises:
+        AssertionError: If any stream width exceeds max_bitwidth.
+    """
+    # Check MVAU_hls layers
+    fc_layers = folding_model.get_nodes_by_op_type("MVAU_hls")
+    for node in fc_layers:
+        node_inst = getCustomOp(node)
+        simd = node_inst.get_nodeattr("SIMD")
+        pe = node_inst.get_nodeattr("PE")
+        input_bitwidth = node_inst.get_input_datatype().bitwidth()
+        output_bitwidth = node_inst.get_output_datatype().bitwidth()
+
+        instream_width = simd * input_bitwidth
+        outstream_width = pe * output_bitwidth
+
+        assert instream_width <= max_bitwidth, f"{node.name} has input stream width {instream_width} bits > {max_bitwidth}"
+        assert outstream_width <= max_bitwidth, f"{node.name} has output stream width {outstream_width} bits > {max_bitwidth}"
+
+    # Check VVAU layers if any
+    vvau_layers = folding_model.get_nodes_by_op_type("VVAU")
+    for node in vvau_layers:
+        node_inst = getCustomOp(node)
+        simd = node_inst.get_nodeattr("SIMD")
+        pe = node_inst.get_nodeattr("PE")
+        input_bitwidth = node_inst.get_input_datatype().bitwidth()
+        output_bitwidth = node_inst.get_output_datatype().bitwidth()
+
+        instream_width = simd * input_bitwidth
+        outstream_width = pe * output_bitwidth
+
+        assert instream_width <= max_bitwidth, f"{node.name} has input stream width {instream_width} bits > {max_bitwidth}"
+        assert outstream_width <= max_bitwidth, f"{node.name} has output stream width {outstream_width} bits > {max_bitwidth}"
+
+    log_message("All stream widths are within the allowed maximum.", "info")
+
+def insert_and_set_fifo_depths(folding_model, fpgapart, clk_ns=10.0, max_qsrl_depth=256, max_depth=None, swg_exception=False, vivado_ram_style='auto', force_python_sim=False):
+    """
+    Inserts and sets FIFO depths using the InsertAndSetFIFODepths transformation.
+
+    Parameters:
+        folding_model (ModelWrapper): The FINN model.
+        fpgapart (str): FPGA part identifier.
+        clk_ns (float): Clock period in nanoseconds.
+        max_qsrl_depth (int): Threshold to use Vivado IP for FIFO depths exceeding this value.
+        max_depth (int or None): Initial depth for the largest FIFOs.
+        swg_exception (bool): Adjust convolution FIFO depths if True.
+        vivado_ram_style (str): RAM style attribute for Vivado-implemented FIFOs.
+        force_python_sim (bool): Force the use of Python-based simulation.
+
+    Returns:
+        ModelWrapper: The model with inserted and set FIFO depths.
+    """
+    insert_set_fifo_depths = InsertAndSetFIFODepths(
+        fpgapart=fpgapart,
+        clk_ns=clk_ns,
+        max_qsrl_depth=max_qsrl_depth,
+        max_depth=max_depth,
+        swg_exception=swg_exception,
+        vivado_ram_style=vivado_ram_style,
+        force_python_sim=force_python_sim
+    )
+    folding_model = folding_model.transform(insert_set_fifo_depths)
+    log_message("Inserted and set FIFO depths using InsertAndSetFIFODepths.", "info")
+    return folding_model
+
+def insert_dwcs_if_needed(model_dwc):
+    """
+    Inserts DataWidthConverters (DWCs) where stream widths between consecutive layers do not match.
+
+    Parameters:
+        model_dwc (ModelWrapper): The FINN model.
+
+    Returns:
+        ModelWrapper: The model with DWCs inserted where necessary.
+    """
+
+    # InsertDWC handles the insertion of DWCs automatically when stream widths mismatch.
+    model_dwc = model_dwc.transform(InsertDWC())
+    log_message("Inserted DataWidthConverters where necessary.", "info")
+
+    return model_dwc
+
+def folding_transform(input_folding_model, board_name, save_name):
+    """
+    Applies a user-defined folding configuration to MVAU_hls and VVAU layers, inserts and sets FIFO depths,
+    inserts DWCs, validates the model, and saves the result.
 
     Parameters:
         input_folding_model (ModelWrapper): The specialized model to transform.
-        save_name (str): Directory to save the transformed model.
+        save_name (str): Path to save the transformed model (e.g., checkpoint).
+        fpgapart (str): FPGA part identifier.
 
     Returns:
         ModelWrapper: The transformed and folded dataflow model.
     """
-    folding_config = [
-        (16, 3, [128]),
-        (32, 32, [128]),
-        (16, 32, [128]),
-        (16, 32, [128]),
-        (4, 32, [81]),
-        (1, 32, [2]),
-        (1, 4, [2]),
-        (1, 8, [128]),
-        (5, 1, [3]),
-    ]
+    # Set default parameters or override with kwargs
+    max_pe = 4
+    max_simd = 4
+    max_bitwidth = 8191
+    max_total_ram = 280
+    fpgapart = pynq_part_map[board_name]
 
-    # Apply folding configuration to fully connected layers
-    fc_layers = input_folding_model.get_nodes_by_op_type("MVAU_hls")
-    for fcl, (pe, simd, ififodepth) in zip(fc_layers, folding_config):
-        fcl_inst = getCustomOp(fcl)
-        fcl_inst.set_nodeattr("PE", pe)
-        fcl_inst.set_nodeattr("SIMD", simd)
-        fcl_inst.set_nodeattr("inFIFODepths", ififodepth)
-
-    # Apply SIMD values from the folding configuration to sliding window layers
-    swg_layers = input_folding_model.get_nodes_by_op_type("ConvolutionInputGenerator_rtl")
-    for i in range(len(swg_layers)):
-        swg_inst = getCustomOp(swg_layers[i])
-        simd = folding_config[i][1]
-        swg_inst.set_nodeattr("SIMD", simd)
-
-    # Apply unique node names to all nodes and save the transformed model
+    # Apply unique node naming transformation
     input_folding_model = input_folding_model.transform(GiveUniqueNodeNames())
+    log_message("Applied GiveUniqueNodeNames transformation.", "info")
+
+    folding_config = generate_valid_folding_factors(
+        input_folding_model,
+        max_pe=max_pe,
+        max_simd=max_simd,
+        max_bitwidth=max_bitwidth,
+        max_total_ram=max_total_ram
+    )
+
+    # Apply folding configuration
+    input_folding_model = apply_folding_config(input_folding_model, folding_config)
+    ''' 
+    # Insert and set FIFO depths first
+    input_folding_model = insert_and_set_fifo_depths(
+        input_folding_model,
+        fpgapart=fpgapart,
+        clk_ns=10.0,
+        max_qsrl_depth=256,
+        max_depth=None,  # Use tensor size as initial depth
+        swg_exception=False,
+        vivado_ram_style='auto',
+        force_python_sim=False
+    )
+    '''
+
+    log_message("Applied folding configuration to the model.", "info")
+
+    # Validate stream widths before inserting DWCs
+    try:
+        validate_stream_widths(input_folding_model, max_bitwidth=max_bitwidth)
+    except AssertionError as e:
+        log_message(f"Stream width validation failed: {e}", "error")
+        # Implement a fallback strategy: reduce max_simd and max_pe by half and retry
+        log_message("Reducing max_simd and max_pe by half and retrying...", "warning")
+        new_max_simd = max(1, max_simd // 2)
+        new_max_pe = max(1, max_pe // 2)
+        folding_config = generate_valid_folding_factors(
+            input_folding_model,
+            max_pe=new_max_pe,
+            max_simd=new_max_simd,
+            max_bitwidth=max_bitwidth,
+            max_total_ram=max_total_ram
+        )
+        input_folding_model = apply_folding_config(input_folding_model, folding_config)
+        # Re-validate
+        validate_stream_widths(input_folding_model, max_bitwidth=max_bitwidth)
+        log_message("Re-validated stream widths after fallback strategy.", "info")
+
+    # Insert DWCs where needed
+    input_folding_model = insert_dwcs_if_needed(input_folding_model)
+
+    # Save the folded model
     input_folding_model.save(save_name)
+    log_message(f"Folded model saved to '{save_name}'.", "info")
 
     return input_folding_model
+
+
 
 
 from finn.transformation.fpgadataflow.make_zynq_proj import ZynqBuild

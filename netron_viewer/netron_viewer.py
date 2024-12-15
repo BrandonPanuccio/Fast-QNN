@@ -10,9 +10,9 @@ app.secret_key = 'eh78ZMarx3wJcsscsLbJlg=='  # Required for session handling
 def setup():
     if request.method == 'POST':
         # Get data from form and store in session
-        session['proj_name'] = request.form.get('proj_name', 'alexnet_1w1a')
+        session['proj_name'] = request.form.get('proj_name', 'alexnet_3w3a_mnist')
         session['onnx_folder'] = request.form.get('onnx_folder',
-                                                  '/home/fastqnn/finn/notebooks/Fast-QNN/outputs/txaviour/alexnet_1w1a_0/checkpoints')
+                                                  '/home/fastqnn/finn/notebooks/Fast-QNN/outputs/txaviour/alexnet_3w3a_mnist_0/checkpoints')
         session['netron_start_port'] = int(request.form.get('netron_start_port', 20123))
 
         # Indicate setup completion
@@ -20,8 +20,8 @@ def setup():
         return redirect(url_for('index'))
 
     # Render setup form with default values
-    return render_template('setup.html', proj_name=session.get('proj_name', 'alexnet_1w1a'),
-                           onnx_folder=session.get('onnx_folder', '/home/fastqnn/finn/notebooks/Fast-QNN/outputs/txaviour/alexnet_1w1a_0/checkpoints'),
+    return render_template('setup.html', proj_name=session.get('proj_name', 'alexnet_3w3a_mnist'),
+                           onnx_folder=session.get('onnx_folder', '/home/fastqnn/finn/notebooks/Fast-QNN/outputs/txaviour/alexnet_3w3a_mnist_0/checkpoints'),
                            netron_start_port=session.get('netron_start_port', 20123))
 
 
