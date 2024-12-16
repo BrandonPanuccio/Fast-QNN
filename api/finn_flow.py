@@ -673,7 +673,7 @@ def generate_valid_folding_factors(
     """
     folding_config = {}
 
-    relevant_node_types = ["MVAU_hls", "VVAU"]
+    relevant_node_types = ["MVAU_hls", "VVAU", "ConvolutionInputGenerator_rtl"]
 
     for node_type in relevant_node_types:
         layers = folding_model.get_nodes_by_op_type(node_type)
@@ -684,7 +684,7 @@ def generate_valid_folding_factors(
             if node_type == "ConvolutionInputGenerator_rtl":
                 # For ConvolutionInputGenerator_rtl, set only SIMD
                 # Derive SIMD based on IFMChannels
-                ifm_channels = node_inst.get_input_shape()[-1]  # Assuming NHWC or similar format
+                ifm_channels = node_inst.get_nodeattr("IFMChannels")  # Assuming NHWC or similar format
                 simd = calculate_simd(ifm_channels, max_simd)
 
                 # Validate bitwidth constraint
@@ -894,8 +894,8 @@ def folding_transform(input_folding_model, board_name, save_name):
         ModelWrapper: The transformed and folded dataflow model.
     """
     # Set default parameters or override with kwargs
-    max_pe = 4
-    max_simd = 4
+    max_pe = 1
+    max_simd = 1
     max_bitwidth = 8191
     max_total_ram = 280
     fpgapart = pynq_part_map[board_name]
@@ -952,7 +952,7 @@ def folding_transform(input_folding_model, board_name, save_name):
         log_message("Re-validated stream widths after fallback strategy.", "info")
 
     # Insert DWCs where needed
-    input_folding_model = insert_dwcs_if_needed(input_folding_model)
+    # input_folding_model = insert_dwcs_if_needed(input_folding_model)
 
     # Save the folded model
     input_folding_model.save(save_name)
