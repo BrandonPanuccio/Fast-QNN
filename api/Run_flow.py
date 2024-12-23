@@ -26,7 +26,7 @@ def finn_flow_task(prj_info):
             pretrained_folder = os.path.join(prj_info['Folder'], "src")
             input_model, input_model_shape = load_pretrained_model(prj_info['Pretrained_Model'],
                                                                    prj_info['Model_Type'], pretrained_folder,
-                                                                   initial_channels=1) #rgb =3, grayscale = 1 needs automation
+                                                                   initial_channels=3) #rgb =3, grayscale = 1 needs automation
         else:
             log_message("Unsupported Model Type", level="error")
 
@@ -125,11 +125,11 @@ def finn_flow_task(prj_info):
         return "Error"
 
 if __name__ == '__main__':
-    prj_name_input = "Alexnet 3w3a MNIST"
-    board_name_input = "Pynq-Z2"
+    prj_name_input = "Alexnet 2w2a Cifar10"
+    board_name_input = "Pynq-ZU"
     prj_folder_input = sanitize_string(prj_name_input)
     model_type_input = "sample_pretrained"
-    pretrained_model_name_input = "alexnet_3w3a_mnist"
+    pretrained_model_name_input = "alexnet_2w2a_cifar10"
     Project_Info = setup_project(prj_name=prj_name_input, brd_name=board_name_input, model_type=model_type_input,
                                  sample_pretrained_model=pretrained_model_name_input)
     finn_flow_task(Project_Info)

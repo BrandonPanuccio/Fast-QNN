@@ -143,13 +143,19 @@ def load_pretrained_model(model_name, model_type, src_folder, initial_channels=3
     os.environ['TORCH_HOME'] = src_folder
     pretrained_model = None
     if model_type == "sample_pretrained":
-        if model_name == "alexnet_3w3a_cifar10":
+        if model_name == "alexnet_2w2a_cifar10":
+            pretrained_model = QuantAlexNet(num_bits=2, num_classes=10).to('cpu')
+            pretrained_model.load_state_dict(
+                torch.load("/home/fastqnn/finn/notebooks/Fast-QNN/alexnet_2w2a_cifar10.pth",
+                           map_location=torch.device('cpu')))
+            pretrained_model.eval()
+        elif model_name == "alexnet_3w3a_cifar10":
             pretrained_model = QuantAlexNet(num_bits=3, num_classes=10).to('cpu')
             pretrained_model.load_state_dict(
                 torch.load("/home/fastqnn/finn/notebooks/Fast-QNN/alexnet_3w3a_cifar10.pth",
                            map_location=torch.device('cpu')))
             pretrained_model.eval()
-        if model_name == "alexnet_3w3a_mnist":
+        elif model_name == "alexnet_3w3a_mnist":
             pretrained_model = QuantAlexNet(num_bits=3, num_classes=10).to('cpu')
             pretrained_model.load_state_dict(torch.load("/home/fastqnn/finn/notebooks/Fast-QNN/alexnet_3w3a_mnist.pth",
                                                         map_location=torch.device('cpu')))
